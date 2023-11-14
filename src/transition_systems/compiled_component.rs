@@ -5,12 +5,13 @@ use crate::system::query_failures::{
     ActionFailure, ConsistencyResult, DeterminismResult, SystemRecipeFailure,
 };
 use crate::system::specifics::SpecificLocation;
-use crate::transition_systems::{LocationTree, TransitionSystem, TransitionSystemPtr};
+use crate::transition_systems::{Conjunction, LocationTree, TransitionSystem, TransitionSystemPtr};
 use edbm::util::bounds::Bounds;
 use edbm::util::constraints::ClockIndex;
 use std::collections::hash_set::HashSet;
 use std::collections::HashMap;
 use std::iter::FromIterator;
+use crate::transition_systems;
 
 use super::transition_system::ComponentInfoTree;
 use super::{CompositionType, LocationID};
@@ -111,21 +112,21 @@ impl CompiledComponent {
         &self.comp_info
     }
 
-    fn remove_clock_from_transistion_system(
-        system: Box<TransitionSystem>,
+    fn remove_clock_from_transition_system(
+        system: Box<TransitionSystemPtr>,
         clock_index: ClockIndex,
     ) {
-        /*match system {
-        conjunction => ...
-        disjunction ->...
-        quotient ->...
-        compiled_component -> remove_clock_from_component(component)
-
-        }*/
+        match system {
+            conjunction => conjunction.get_children();
+            disjunction => ...
+            quotient => ...
+            compiled_component => remove_clock_from_component(compiled_component, clock_index)
+        }
     }
+
     fn remove_clock_from_component(component: &mut CompiledComponent, clock_index: ClockIndex) {
         //call remove_clock_from_transition on all transitions
-        for (_, mut transitions) in component.location_edges.iter() {
+        for (_, transitions) in component.location_edges.iter() {
             for (_, transition) in transitions.to_owned().iter_mut() {
                 remove_clock_from_transition(transition, clock_index);
             }
@@ -139,7 +140,7 @@ impl CompiledComponent {
         component.comp_info.declarations.get_clock_name_by_index(clock_index);
     }
 }
-fn remove_clock_from_transition(mut transition: &mut Transition, clock_index: ClockIndex) {
+fn remove_clock_from_transition(transition: &mut Transition, clock_index: ClockIndex) {
     //call rebuild_federation_without_clock for guard
     transition.guard_zone =
         crate::extract_system_rep::clock_reduction::remove_clock_from_federation(
