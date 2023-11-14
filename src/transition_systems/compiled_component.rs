@@ -11,7 +11,9 @@ use edbm::util::constraints::ClockIndex;
 use std::collections::hash_set::HashSet;
 use std::collections::HashMap;
 use std::iter::FromIterator;
+use CompositionType::Simple;
 use crate::transition_systems;
+use crate::transition_systems::common::ComposedTransitionSystem;
 
 use super::transition_system::ComponentInfoTree;
 use super::{CompositionType, LocationID};
@@ -112,19 +114,43 @@ impl CompiledComponent {
         &self.comp_info
     }
 
-    fn remove_clock_from_transition_system(
-        system: Box<TransitionSystemPtr>,
+    fn remove_clock(
+        system: &mut ComposedTransitionSystem,
         clock_index: ClockIndex,
     ) {
-        match system {
-            conjunction => conjunction.get_children();
-            disjunction => ...
-            quotient => ...
-            compiled_component => remove_clock_from_component(compiled_component, clock_index)
-        }
+        let (left, right) = system.get_children();
+        left.check_determinism();
+        right.check_determinism();
+        remove_clock_lol(left, clock_index); //left tager transitionsystemptr.
+        //system.get_composition_type();
+        /*match system.get_composition_type() {
+            /*
+            Tilgå de to TransitionSystemPtr elementer i conjunction.rs (left, right)
+            Find ud af hvordan vi tilgår TransitionSystem, og igennem den, components.
+            */
+            Conjunction => {
+                Conjunction.check_determinism();
+                Conjunction.remove_clock_from_component();
+                println!("Removed clocks from conjunction");
+            },
+            Disjunction => {
+                //Essentielt reverse logik for conjunction, ved dog ik hvad jeg skal access
+                println!("Removed clocks from disjunction");
+            },
+            Quotient => {
+                remove_clock_from_component(quotient, clock_index);
+                println!("Removed clocks from quotient");
+                //Min forståelse af quotient er at det er en "buffer", så hvilke clocks er der i den? hvordan tilgår man dem?
+            },
+            Simple => {
+                remove_clock_from_component(compiled_component, clock_index);
+                println!("Removed clocks from compiled_component");
+            },
+                //
+        }*/
     }
 
-    fn remove_clock_from_component(component: &mut CompiledComponent, clock_index: ClockIndex) {
+    pub fn remove_clock_lol(component: &mut CompiledComponent, clock_index: ClockIndex) {
         //call remove_clock_from_transition on all transitions
         for (_, transitions) in component.location_edges.iter() {
             for (_, transition) in transitions.to_owned().iter_mut() {
@@ -140,6 +166,8 @@ impl CompiledComponent {
         component.comp_info.declarations.get_clock_name_by_index(clock_index);
     }
 }
+
+
 fn remove_clock_from_transition(transition: &mut Transition, clock_index: ClockIndex) {
     //call rebuild_federation_without_clock for guard
     transition.guard_zone =
@@ -238,7 +266,7 @@ impl TransitionSystem for CompiledComponent {
     }
 
     fn get_composition_type(&self) -> CompositionType {
-        CompositionType::Simple
+        Simple
     }
 
     fn comp_infos(&'_ self) -> ComponentInfoTree<'_> {
