@@ -69,6 +69,30 @@ fn apply_constraints_to_state_helper(
 }
 
 /// Assumes that the constraint is of the form left <?= right
+///
+/// Converts 2 ArithExpressions into a constraint
+///
+/// [replace_vars] converts [ArithExpression::VarName] to [ArithExpression::Clock] using [crate::model_objects::Component::get_declarations]
+///
+/// [simplify] is simplifying of constants such as if 2 siblings are both integers for a given multiplication, addition etc. their parent node is replaced with an integer representing the operation.
+///
+/// # Arguments
+///
+/// * `expr`:
+/// * `decls`:
+///
+/// returns: Result<ArithExpression, String>
+///
+/// # Examples
+///
+/// ## Replace var with clock
+/// Component A has clock x and y. GlobalIndex is mapped to 0, x to 1, y to 2.
+/// Component B has clock x and z. GlobalIndex is mapped to 0, x to 3, z to 4.
+///
+/// Tree node for the clock is in string: varName("y") -> ClockIndex(2)
+///
+/// ## Replace int tree with int
+/// 2*4 as a tree: mult{ (int(2), int(4) } -> int(8)
 fn get_indices(
     left: &ArithExpression,
     right: &ArithExpression,
@@ -129,26 +153,6 @@ fn get_indices(
     result
 }
 
-/// Converts [ArithExpression::VarName] to [ArithExpression::Clock] using [crate::model_objects::Component::get_declarations]
-///
-/// If 2 siblings are both integers for a given multiplication, addition etc. their parent node is replaced with an integer representing the operation.
-///
-/// # Arguments
-///
-/// * `expr`:
-/// * `decls`:
-///
-/// returns: Result<ArithExpression, String>
-///
-/// # Examples
-///
-/// ## Replace var with clock
-/// Component A has clock x and y. GlobalIndex is mapped to 0, x to 1, y to 2.
-///
-/// Tree node for the clock is in string: varName("y") -> ClockIndex(2)
-///
-/// ## Replace int tree with int
-/// 2*4 as a tree: mult{ (int(2), int(4) } -> int(8)
 fn replace_vars(expr: &ArithExpression, decls: &Declarations) -> Result<ArithExpression, String> {
     //let mut out = expr.clone();
     match expr {
