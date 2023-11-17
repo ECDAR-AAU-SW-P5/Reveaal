@@ -112,6 +112,10 @@ impl Quotient {
         });
         Ok(ts)
     }
+
+    fn get_children_mut(&mut self) -> (&mut TransitionSystemPtr, &mut TransitionSystemPtr) {
+        (&mut self.t, &mut self.s)
+    }
 }
 
 impl TransitionSystem for Quotient {
@@ -383,6 +387,15 @@ impl TransitionSystem for Quotient {
 
     fn get_composition_type(&self) -> CompositionType {
         CompositionType::Quotient
+    }
+
+    fn remove_clock(&mut self, clock_index: ClockIndex) -> Result<(), String> {
+        if self.quotient_clock_index == clock_index {
+            panic!("Can't remove quotient");
+        }
+        let (a, b) = self.get_children_mut();
+        a.remove_clock(clock_index)?; // remove if not ok
+        b.remove_clock(clock_index)
     }
 
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String> {

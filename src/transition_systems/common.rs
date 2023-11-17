@@ -134,6 +134,12 @@ impl<T: ComposedTransitionSystem> TransitionSystem for T {
         self.get_composition_type()
     }
 
+    fn remove_clock(&mut self, clock_index: ClockIndex) -> Result<(), String> {
+        let (left, right) = self.get_children_mut();
+        left.remove_clock(clock_index)?; // return if not ok
+        right.remove_clock(clock_index)
+    }
+
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String> {
         let (left, right) = self.get_children();
         let (t_left, t_right) = target.split();

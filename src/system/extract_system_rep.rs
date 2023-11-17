@@ -6,7 +6,6 @@ use crate::system::executable_query::{
     ReachabilityExecutor, RefinementExecutor,
 };
 use crate::system::extract_state::get_state;
-use std::collections::HashMap;
 
 use crate::transition_systems::{
     CompiledComponent, Composition, Conjunction, Quotient, TransitionSystemPtr,
@@ -15,10 +14,11 @@ use crate::transition_systems::{
 use super::executable_query::SyntaxExecutor;
 use super::query_failures::{SyntaxResult, SystemRecipeFailure};
 use crate::system::pruning;
-use crate::transition_systems::transition_system::ClockReductionInstruction;
+use crate::transition_systems::clock_reduction::clock_reduction_instruction::ClockReductionInstruction;
 use edbm::util::constraints::ClockIndex;
 use log::debug;
 use simple_error::bail;
+use crate::transition_systems::clock_reduction::reduction::clock_reduce;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ExecutableQueryError {
@@ -51,37 +51,31 @@ pub fn create_executable_query<'a>(
             QueryExpression::Refinement(left_side, right_side) => {
                 let mut quotient_index = None;
 
-                let mut left =
-                    get_system_recipe(left_side, component_loader, &mut dim, &mut quotient_index)
-                        .unwrap();
-                let mut right =
-                    get_system_recipe(right_side, component_loader, &mut dim, &mut quotient_index)
-                        .unwrap();
-
-                if !component_loader.get_settings().disable_clock_reduction {
-                    clock_reduction::clock_reduce(
-                        &mut left,
-                        Some(&mut right),
-                        &mut dim,
-                        quotient_index,
-                    )?;
-                }
+                let mut left = get_system_recipe(left_side, component_loader, &mut dim, &mut quotient_index).unwrap();
+                let mut right = get_system_recipe(right_side, component_loader, &mut dim, &mut quotient_index).unwrap();
 
                 let mut component_index = 0;
+                let mut left_ts = left.compile_with_index(dim, &mut component_index)?;
+                let mut right_ts = right.compile_with_index(dim, &mut component_index)?;
+
+                if !component_loader.get_settings().disable_clock_reduction {
+                    clock_reduce(&mut left_ts, Some(&mut right_ts), &mut dim, quotient_index)?;
+
+                }
+
 
                 Ok(Box::new(RefinementExecutor {
-                    sys1: left.compile_with_index(dim, &mut component_index)?,
-                    sys2: right.compile_with_index(dim, &mut component_index)?,
+                    sys1: left_ts,
+                    sys2: right_ts,
                 }))
             }
             QueryExpression::Reachability { system, from, to } => {
-                let machine =
-                    get_system_recipe(system, component_loader, &mut dim, &mut None).unwrap();
-                let transition_system = machine.clone().compile(dim)?;
+                let recipe = get_system_recipe(system, component_loader, &mut dim, &mut None).unwrap();
+                let transition_system = recipe.clone().compile(dim)?;
 
                 // Assign the start state to the initial state of the transition system if no start state is given by the query
                 let start_state: State = if let Some(state) = from.as_ref() {
-                    let state = get_state(state, &machine, &transition_system)
+                    let state = get_state(state, &recipe, &transition_system)
                         .map_err(|err| format!("Invalid Start state: {}", err))?;
                     if state.decorated_locations.id.is_partial_location() {
                         return Err("Start state is a partial state, which it must not be".into());
@@ -94,7 +88,7 @@ pub fn create_executable_query<'a>(
                     }
                 };
 
-                let end_state: State = get_state(to, &machine, &transition_system)
+                let end_state: State = get_state(to, &recipe, &transition_system)
                     .map_err(|err| format!("Invalid End state: {}", err))?;
 
                 Ok(Box::new(ReachabilityExecutor {
@@ -103,81 +97,64 @@ pub fn create_executable_query<'a>(
                     end_state,
                 }))
             }
-            QueryExpression::Consistency(query_expression) => {
+            QueryExpression::Consistency(system) => {
                 let mut quotient_index = None;
-                let mut recipe = get_system_recipe(
-                    query_expression,
-                    component_loader,
-                    &mut dim,
-                    &mut quotient_index,
-                )
-                .unwrap();
+                let mut recipe = get_system_recipe(system, component_loader, &mut dim, &mut quotient_index).unwrap();
+                let mut transition_system = recipe.compile(dim)?;
 
                 if !component_loader.get_settings().disable_clock_reduction {
-                    clock_reduction::clock_reduce(&mut recipe, None, &mut dim, quotient_index)?;
+                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index)?;
                 }
 
                 Ok(Box::new(ConsistencyExecutor {
-                    system: recipe.compile(dim)?,
+                    system: transition_system,
                 }))
             }
-            QueryExpression::Syntax(query_expression) => {
+            QueryExpression::Syntax(system) => {
                 let mut quotient_index = None;
-                let recipe = get_system_recipe(
-                    query_expression,
-                    component_loader,
-                    &mut dim,
-                    &mut quotient_index,
-                );
+                let recipe = get_system_recipe(system, component_loader, &mut dim, &mut quotient_index);
 
                 Ok(Box::new(SyntaxExecutor { result: recipe }))
             }
-            QueryExpression::Determinism(query_expression) => {
+            QueryExpression::Determinism(system) => {
                 let mut quotient_index = None;
-                let mut recipe = get_system_recipe(
-                    query_expression,
-                    component_loader,
-                    &mut dim,
-                    &mut quotient_index,
-                )
-                .unwrap();
+                let mut recipe = get_system_recipe(system, component_loader, &mut dim, &mut quotient_index).unwrap();
+                let mut transition_system = recipe.compile(dim)?;
 
                 if !component_loader.get_settings().disable_clock_reduction {
-                    clock_reduction::clock_reduce(&mut recipe, None, &mut dim, quotient_index)?;
+                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index)?;
                 }
 
                 Ok(Box::new(DeterminismExecutor {
-                    system: recipe.compile(dim)?,
+                    system: transition_system,
                 }))
             }
             QueryExpression::GetComponent(SaveExpression { system, name }) => {
                 let mut quotient_index = None;
-                let mut recipe =
-                    get_system_recipe(system, component_loader, &mut dim, &mut quotient_index)
-                        .unwrap();
+                let mut recipe = get_system_recipe(system, component_loader, &mut dim, &mut quotient_index).unwrap();
+                let mut transition_system = recipe.compile(dim)?;
 
                 if !component_loader.get_settings().disable_clock_reduction {
-                    clock_reduction::clock_reduce(&mut recipe, None, &mut dim, quotient_index)?;
+                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index)?;
                 }
 
                 Ok(Box::new(GetComponentExecutor {
-                    system: recipe.compile(dim)?,
+                    system: transition_system,
                     comp_name: name.clone().unwrap_or("Unnamed".to_string()),
                     component_loader,
                 }))
             }
             QueryExpression::Prune(SaveExpression { system, name }) => {
                 let mut quotient_index = None;
-                let mut recipe =
-                    get_system_recipe(system, component_loader, &mut dim, &mut quotient_index)
-                        .unwrap();
+                let mut recipe = get_system_recipe(system, component_loader, &mut dim, &mut quotient_index).unwrap();
+                let mut transition_system = recipe.compile(dim)?;
 
                 if !component_loader.get_settings().disable_clock_reduction {
-                    clock_reduction::clock_reduce(&mut recipe, None, &mut dim, quotient_index)?;
+                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index)?;
                 }
 
                 Ok(Box::new(GetComponentExecutor {
-                    system: pruning::prune_system(recipe.compile(dim)?, dim),
+                    system: pruning::prune_system(transition_system, dim),
                     comp_name: name.clone().unwrap_or("Unnamed".to_string()),
                     component_loader,
                 }))
@@ -255,7 +232,7 @@ impl SystemRecipe {
     }
 
     ///Applies the clock-reduction
-    fn reduce_clocks(&mut self, clock_instruction: Vec<ClockReductionInstruction>) {
+    pub(crate) fn reduce_clocks(&mut self, clock_instruction: Vec<ClockReductionInstruction>) {
         let mut comps = self.get_components_mut();
         for redundant in clock_instruction {
             match redundant {
@@ -280,7 +257,7 @@ impl SystemRecipe {
     }
 
     /// Gets all components in `SystemRecipe`
-    fn get_components_mut(&mut self) -> Vec<&mut Component> {
+    pub(crate) fn get_components_mut(&mut self) -> Vec<&mut Component> {
         match self {
             SystemRecipe::Composition(left, right)
             | SystemRecipe::Conjunction(left, right)
@@ -306,7 +283,7 @@ impl SystemRecipe {
         }
     }
 
-    fn change_quotient(&mut self, index: ClockIndex) {
+    pub(crate) fn change_quotient(&mut self, index: ClockIndex) {
         match self {
             SystemRecipe::Composition(l, r) | SystemRecipe::Conjunction(l, r) => {
                 l.change_quotient(index);
@@ -361,318 +338,6 @@ pub fn get_system_recipe(
             debug!("{} Clocks: {:?}", name, component.declarations.clocks);
 
             Ok(Box::new(SystemRecipe::Component(Box::new(component))))
-        }
-    }
-}
-
-/// Module containing a "safer" function for clock reduction, along with some helper functions
-pub(crate) mod clock_reduction {
-    use super::*;
-    use edbm::util::constraints::{Constraint, Disjunction, Inequality};
-    use edbm::zones::{Federation, OwnedFederation};
-
-    /// Function for a "safer" clock reduction that handles both the dimension of the DBM and the quotient index if needed be
-    /// # Arguments
-    /// `lhs`: The (main) [`SystemRecipe`] to clock reduce\n
-    /// `rhs`: An optional [`SystemRecipe`] used for multiple operands (Refinement)\n
-    /// `dim`: A mutable reference to the DBMs dimension for updating\n
-    /// `quotient_clock`: The clock for the quotient (This is not reduced)
-    /// # Returns
-    /// A `Result` used if the [`SystemRecipe`](s) fail during compilation
-    pub fn clock_reduce(
-        lhs: &mut Box<SystemRecipe>,
-        rhs: Option<&mut Box<SystemRecipe>>,
-        dim: &mut usize,
-        quotient_clock: Option<ClockIndex>,
-    ) -> Result<(), Box<SystemRecipeFailure>> {
-        if *dim == 0 {
-            return Ok(());
-        } else if rhs.is_none() {
-            return clock_reduce_single(lhs, dim, quotient_clock);
-        }
-        let rhs = rhs.unwrap();
-
-        let (l_clocks, r_clocks) = filter_redundant_clocks(
-            lhs.clone().compile(*dim)?.find_redundant_clocks(),
-            rhs.clone().compile(*dim)?.find_redundant_clocks(),
-            quotient_clock,
-            lhs.get_components_mut()
-                .iter()
-                .flat_map(|c| c.declarations.clocks.values().cloned())
-                .max()
-                .unwrap_or_default(),
-        );
-
-        debug!("Clocks to be reduced: {l_clocks:?} + {r_clocks:?}");
-        *dim -= l_clocks
-            .iter()
-            .chain(r_clocks.iter())
-            .fold(0, |acc, c| acc + c.clocks_removed_count());
-        debug!("New dimension: {dim}");
-
-        rhs.reduce_clocks(r_clocks);
-        lhs.reduce_clocks(l_clocks);
-        compress_component_decls(lhs.get_components_mut(), Some(rhs.get_components_mut()));
-        if quotient_clock.is_some() {
-            lhs.change_quotient(*dim);
-            rhs.change_quotient(*dim);
-        }
-
-        Ok(())
-    }
-
-    /// Clock reduces a "single_expression", such as consistency
-    /// # Arguments
-    ///
-    /// * `sys`: The [`SystemRecipe`] to clock reduce
-    /// * `dim`: the dimension of the system
-    /// * `quotient_clock`: The clock for the quotient (This is not reduced)
-    ///
-    /// returns: Result<(), SystemRecipeFailure>
-    fn clock_reduce_single(
-        sys: &mut Box<SystemRecipe>,
-        dim: &mut usize,
-        quotient_clock: Option<ClockIndex>,
-    ) -> Result<(), Box<SystemRecipeFailure>> {
-        let mut clocks = sys.clone().compile(*dim)?.find_redundant_clocks();
-        clocks.retain(|ins| ins.get_clock_index() != quotient_clock.unwrap_or_default());
-        debug!("Clocks to be reduced: {clocks:?}");
-        *dim -= clocks
-            .iter()
-            .fold(0, |acc, c| acc + c.clocks_removed_count());
-        debug!("New dimension: {dim}");
-        sys.reduce_clocks(clocks);
-        compress_component_decls(sys.get_components_mut(), None);
-        if quotient_clock.is_some() {
-            sys.change_quotient(*dim);
-        }
-        Ok(())
-    }
-
-    fn filter_redundant_clocks(
-        lhs: Vec<ClockReductionInstruction>,
-        rhs: Vec<ClockReductionInstruction>,
-        quotient_clock: Option<ClockIndex>,
-        split_index: ClockIndex,
-    ) -> (
-        Vec<ClockReductionInstruction>,
-        Vec<ClockReductionInstruction>,
-    ) {
-        fn get_unique_redundant_clocks<P: Fn(ClockIndex) -> bool>(
-            l: Vec<ClockReductionInstruction>,
-            r: Vec<ClockReductionInstruction>,
-            quotient: ClockIndex,
-            bound_predicate: P,
-        ) -> Vec<ClockReductionInstruction> {
-            l.into_iter()
-                // Takes clock instructions that also occur in the rhs system
-                // This is done because the lhs also finds the redundant clocks from the rhs,
-                // so to ensure that it should be removed, we check if it occurs on both sides
-                // which would mean it can be removed
-                // e.g "A <= B", we can find clocks from B that are not used in A, so they are marked as remove
-                .filter(|ins| r.contains(ins))
-                // Takes all the clocks within the bounds of the given system
-                // This is done to ensure that we don't try to remove a clock from the rhs system
-                .filter(|ins| bound_predicate(ins.get_clock_index()))
-                // Removes the quotient clock
-                .filter(|ins| ins.get_clock_index() != quotient)
-                .collect()
-        }
-        let quotient_clock = quotient_clock.unwrap_or_default();
-        (
-            get_unique_redundant_clocks(lhs.clone(), rhs.clone(), quotient_clock, |c| {
-                c <= split_index
-            }),
-            get_unique_redundant_clocks(rhs, lhs, quotient_clock, |c| c > split_index),
-        )
-    }
-
-    fn compress_component_decls(
-        mut comps: Vec<&mut Component>,
-        other: Option<Vec<&mut Component>>,
-    ) {
-        let mut seen: HashMap<ClockIndex, ClockIndex> = HashMap::new();
-        let mut l: Vec<&mut ClockIndex> = comps
-            .iter_mut()
-            .flat_map(|c| c.declarations.clocks.values_mut())
-            .collect();
-        let mut temp = other.unwrap_or_default();
-        l.extend(
-            temp.iter_mut()
-                .flat_map(|c| c.declarations.clocks.values_mut()),
-        );
-        l.sort();
-        let mut index = 1;
-        for clock in l {
-            if let Some(val) = seen.get(clock) {
-                *clock = *val;
-            } else {
-                seen.insert(*clock, index);
-                *clock = index;
-                index += 1;
-            }
-        }
-    }
-    pub fn remove_clock_from_federation(
-        federation: &OwnedFederation,
-        remove_clock: ClockIndex,
-        replacing_clock: Option<ClockIndex>,
-    ) -> OwnedFederation {
-        assert_ne!(Some(remove_clock), replacing_clock);
-        let old_disjunction = federation.minimal_constraints();
-        let mut found_clock = false;
-
-        let new_disjunction = Disjunction::new(
-            old_disjunction
-                .iter()
-                // map to new constraints without clock_index and filter by empty conjunctions
-                .filter_map(|conjunction| {
-                    rebuild_conjunction(
-                        conjunction,
-                        remove_clock,
-                        replacing_clock,
-                        &mut found_clock,
-                    )
-                })
-                .collect(),
-        );
-        if !found_clock {
-            // clock didn't exist in federation
-            return federation.owned_clone();
-        }
-        Federation::from_disjunction(&new_disjunction, federation.dim() - 1)
-    }
-
-    fn rebuild_conjunction(
-        conjunction: &edbm::util::constraints::Conjunction,
-        remove_clock: ClockIndex,
-        replacing_clock: Option<ClockIndex>,
-        found_clock: &mut bool,
-    ) -> Option<edbm::util::constraints::Conjunction> {
-        let new_constraints: Vec<Constraint> = conjunction
-            .iter()
-            // Clone constraint
-            .filter_map(|constraint| {
-                remove_or_replace_constraint(constraint, remove_clock, replacing_clock)
-            })
-            .collect::<Vec<Constraint>>();
-        if new_constraints.len() != conjunction.constraints.len() {
-            *found_clock = true;
-        }
-        if new_constraints.len() == 0 {
-            // Remove conjunction constraints using only global clock
-            return None;
-        }
-        let new_conjunction = edbm::util::constraints::Conjunction::new(new_constraints);
-        Some(new_conjunction)
-    }
-
-    // Remove/Replace constraint if constraint contains clock_index
-    // clock can be either i, j or neither
-    fn remove_or_replace_constraint(
-        constraint: &Constraint,
-        remove_clock: ClockIndex,
-        replacing_clock: Option<ClockIndex>,
-    ) -> Option<Constraint> {
-        match replacing_clock {
-            // remove constraint if there's no replacing clock and either side contains the clock to be removed
-            None => {
-                if constraint.i == remove_clock || constraint.j == remove_clock {
-                    return None;
-                }
-            }
-            // Replace either left or right side if either side contains the clock to be removed
-            Some(new_clock) => {
-                if constraint.i == remove_clock {
-                    return Some(create_constraint(
-                        new_clock,
-                        constraint.j,
-                        constraint.ineq(),
-                        remove_clock,
-                    ));
-                } else if constraint.j == remove_clock {
-                    return Some(create_constraint(
-                        constraint.i,
-                        new_clock,
-                        constraint.ineq(),
-                        remove_clock,
-                    ));
-                }
-            }
-        }
-        // If neither side contains the clock rebuild the constraint
-        return Some(create_constraint(
-            constraint.i,
-            constraint.j,
-            constraint.ineq(),
-            remove_clock,
-        ));
-    }
-
-    //helper for remove_or_replace_constraint
-    fn create_constraint(
-        i: ClockIndex,
-        j: ClockIndex,
-        inequality: Inequality,
-        clock_index: ClockIndex,
-    ) -> Constraint {
-        // Redraw constraints if their clocks are higher than the clock to be removed
-        if j > clock_index {
-            Constraint::new(
-                i - 1,
-                j - 1,
-                inequality.into(), //similar to the DBM
-            )
-        } else if i > clock_index {
-            Constraint::new(i - 1, j, inequality.into())
-        } else {
-            Constraint::new(i, j, inequality.into())
-        }
-    }
-
-    #[cfg(test)]
-    mod a {
-        use crate::extract_system_rep::clock_reduction::remove_clock_from_federation;
-        use edbm::util::constraints::{Constraint, Inequality};
-        use edbm::zones::OwnedFederation;
-
-        #[test]
-        fn test_rebuild() {
-            let mut fed = OwnedFederation::universe(4);
-            //TODO: .constrain(2, 1, Inequality::LS(5))
-            // remove clock for 2 for 1,2,3
-            // remove clock 2 for 1,3
-            // remove clock 3 for 1,2,3
-            // remove clock 1 for 1,2,3
-            // move everything regarding clocks to clock module
-            fed = fed
-                .constrain(1, 0, Inequality::LS(5)) // It doesnt make sense to have 0 < i
-                .constrain(1, 2, Inequality::LS(4))
-                .constrain(2, 3, Inequality::LS(3));
-            let new_fed = remove_clock_from_federation(&fed, 1, None);
-            assert_eq!(new_fed.dim(), 3);
-            assert_eq!(
-                new_fed
-                    .minimal_constraints()
-                    .conjunctions
-                    .first()
-                    .unwrap()
-                    .constraints
-                    .len(),
-                1
-            );
-            assert_eq!(
-                new_fed
-                    .minimal_constraints()
-                    .conjunctions
-                    .first()
-                    .unwrap()
-                    .constraints
-                    .first()
-                    .unwrap()
-                    .to_string(),
-                Constraint::new(1, 2, Inequality::LS(3).into()).to_string()
-            )
         }
     }
 }

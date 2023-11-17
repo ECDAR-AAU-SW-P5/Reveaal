@@ -1,19 +1,18 @@
-use crate::extract_system_rep::clock_reduction::remove_clock_from_federation;
 use crate::model_objects::{Component, DeclarationProvider, Declarations, State, Transition};
 use crate::system::local_consistency::{self};
 use crate::system::query_failures::{
     ActionFailure, ConsistencyResult, DeterminismResult, SystemRecipeFailure,
 };
 use crate::system::specifics::SpecificLocation;
-use crate::transition_systems::{Conjunction, LocationTree, TransitionSystem, TransitionSystemPtr};
+use crate::transition_systems::{LocationTree, TransitionSystem, TransitionSystemPtr};
 use edbm::util::bounds::Bounds;
 use edbm::util::constraints::ClockIndex;
 use std::collections::hash_set::HashSet;
 use std::collections::HashMap;
 use std::iter::FromIterator;
 use CompositionType::Simple;
-use crate::transition_systems;
-use crate::transition_systems::common::ComposedTransitionSystem;
+use crate::transition_systems::clock_reduction::clock_removal::remove_clock_from_federation;
+use crate::transition_systems::compiled_update::CompiledUpdate;
 
 use super::transition_system::ComponentInfoTree;
 use super::{CompositionType, LocationID};
@@ -112,73 +111,6 @@ impl CompiledComponent {
 
     fn _comp_info(&self) -> &ComponentInfo {
         &self.comp_info
-    }
-
-    fn remove_clock(
-        system: &mut ComposedTransitionSystem,
-        clock_index: ClockIndex,
-    ) {
-        let (left, right) = system.get_children();
-        left.check_determinism();
-        right.check_determinism();
-        remove_clock_lol(left, clock_index); //left tager transitionsystemptr.
-        //system.get_composition_type();
-        /*match system.get_composition_type() {
-            /*
-            Tilgå de to TransitionSystemPtr elementer i conjunction.rs (left, right)
-            Find ud af hvordan vi tilgår TransitionSystem, og igennem den, components.
-            */
-            Conjunction => {
-                Conjunction.check_determinism();
-                Conjunction.remove_clock_from_component();
-                println!("Removed clocks from conjunction");
-            },
-            Disjunction => {
-                //Essentielt reverse logik for conjunction, ved dog ik hvad jeg skal access
-                println!("Removed clocks from disjunction");
-            },
-            Quotient => {
-                remove_clock_from_component(quotient, clock_index);
-                println!("Removed clocks from quotient");
-                //Min forståelse af quotient er at det er en "buffer", så hvilke clocks er der i den? hvordan tilgår man dem?
-            },
-            Simple => {
-                remove_clock_from_component(compiled_component, clock_index);
-                println!("Removed clocks from compiled_component");
-            },
-                //
-        }*/
-    }
-
-    pub fn remove_clock_lol(component: &mut CompiledComponent, clock_index: ClockIndex) {
-        //call remove_clock_from_transition on all transitions
-        for (_, transitions) in component.location_edges.iter() {
-            for (_, transition) in transitions.to_owned().iter_mut() {
-                remove_clock_from_transition(transition, clock_index);
-            }
-        }
-
-        //call remove_clock_from_locationTree on all locationTrees
-        for locations_tree in component.locations.values_mut() {
-            remove_clock_from_locationTree(locations_tree, clock_index);
-        }
-        //remove clock from declarations
-        component.comp_info.declarations.get_clock_name_by_index(clock_index);
-    }
-}
-
-
-fn remove_clock_from_transition(transition: &mut Transition, clock_index: ClockIndex) {
-    //call rebuild_federation_without_clock for guard
-    transition.guard_zone =
-        crate::extract_system_rep::clock_reduction::remove_clock_from_federation(
-            &transition.guard_zone, clock_index, None,);
-}
-
-fn remove_clock_from_locationTree(location: &mut LocationTree, clock_index: ClockIndex) {
-    //call remove_clock_from_federation for invariant
-    for invariant in &location.invariant {
-        remove_clock_from_federation(&invariant, clock_index, None);
     }
 }
 
@@ -279,6 +211,39 @@ impl TransitionSystem for CompiledComponent {
 
     fn component_names(&self) -> Vec<&str> {
         vec![&self.comp_info.name]
+    }
+
+    fn remove_clock(&mut self, clock_index: ClockIndex) -> Result<(), String> {
+        // Remove clock from Declarations
+        match self.comp_info.declarations.get_clock_name_by_index(clock_index) {
+            None => {}
+            Some(christian) => {
+                self.comp_info.declarations.clocks.remove(christian);
+            }
+        }
+        // Remove clock from Locations
+        for loc in self.locations.values_mut() {
+            // Remove from Invariant
+            match &loc.invariant {
+                None => {}
+                Some(mut inv) => {
+                    inv = remove_clock_from_federation(&inv, clock_index, None);
+                }
+            }
+        }
+        // Remove clock from Edges
+        for b in self.location_edges.values_mut() {
+            for (_, transition) in b.iter_mut() {
+                // Remove clock from Guard
+                transition.guard_zone = remove_clock_from_federation(&transition.guard_zone, clock_index, None);
+
+                // Remove clock from Update
+                transition.updates = transition.updates.into_iter()
+                    .filter(|update| update.clock_index != clock_index)
+                    .collect::<Vec<CompiledUpdate>>()
+            }
+        }
+        Ok(())
     }
 
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String> {
