@@ -1,10 +1,10 @@
-use edbm::zones::{Federation, OwnedFederation};
 use edbm::util::constraints::{ClockIndex, Constraint, Disjunction, Inequality};
+use edbm::zones::{Federation, OwnedFederation};
 
 pub fn remove_clock_from_federation(
     federation: &OwnedFederation,
-    remove_clock: ClockIndex,
-    replacing_clock: Option<ClockIndex>,
+    remove_clock: &ClockIndex,
+    replacing_clock: Option<&ClockIndex>,
 ) -> OwnedFederation {
     assert_ne!(Some(remove_clock), replacing_clock);
     let old_disjunction = federation.minimal_constraints();
@@ -15,12 +15,7 @@ pub fn remove_clock_from_federation(
             .iter()
             // map to new constraints without clock_index and filter by empty conjunctions
             .filter_map(|conjunction| {
-                rebuild_conjunction(
-                    conjunction,
-                    remove_clock,
-                    replacing_clock,
-                    &mut found_clock,
-                )
+                rebuild_conjunction(conjunction, remove_clock, replacing_clock, &mut found_clock)
             })
             .collect(),
     );
@@ -33,8 +28,8 @@ pub fn remove_clock_from_federation(
 
 fn rebuild_conjunction(
     conjunction: &edbm::util::constraints::Conjunction,
-    remove_clock: ClockIndex,
-    replacing_clock: Option<ClockIndex>,
+    remove_clock: &ClockIndex,
+    replacing_clock: Option<&ClockIndex>,
     found_clock: &mut bool,
 ) -> Option<edbm::util::constraints::Conjunction> {
     let new_constraints: Vec<Constraint> = conjunction
@@ -80,31 +75,31 @@ fn create_constraint(
 // clock can be either i, j or neither
 fn remove_or_replace_constraint(
     constraint: &Constraint,
-    remove_clock: ClockIndex,
-    replacing_clock: Option<ClockIndex>,
+    remove_clock: &ClockIndex,
+    replacing_clock: Option<&ClockIndex>,
 ) -> Option<Constraint> {
     match replacing_clock {
         // remove constraint if there's no replacing clock and either side contains the clock to be removed
         None => {
-            if constraint.i == remove_clock || constraint.j == remove_clock {
+            if constraint.i == *remove_clock || constraint.j == *remove_clock {
                 return None;
             }
         }
         // Replace either left or right side if either side contains the clock to be removed
         Some(new_clock) => {
-            if constraint.i == remove_clock {
+            if constraint.i == *remove_clock {
                 return Some(create_constraint(
-                    new_clock,
+                    *new_clock,
                     constraint.j,
                     constraint.ineq(),
-                    remove_clock,
+                    *remove_clock,
                 ));
-            } else if constraint.j == remove_clock {
+            } else if constraint.j == *remove_clock {
                 return Some(create_constraint(
                     constraint.i,
-                    new_clock,
+                    *new_clock,
                     constraint.ineq(),
-                    remove_clock,
+                    *remove_clock,
                 ));
             }
         }
@@ -114,15 +109,15 @@ fn remove_or_replace_constraint(
         constraint.i,
         constraint.j,
         constraint.ineq(),
-        remove_clock,
+        *remove_clock,
     ));
 }
 
 #[cfg(test)]
 mod a {
+    use crate::transition_systems::clock_reduction::clock_removal::remove_clock_from_federation;
     use edbm::util::constraints::{Constraint, Inequality};
     use edbm::zones::OwnedFederation;
-    use crate::transition_systems::clock_reduction::clock_removal::remove_clock_from_federation;
 
     #[test]
     fn test_rebuild() {
@@ -137,7 +132,7 @@ mod a {
             .constrain(1, 0, Inequality::LS(5)) // It doesnt make sense to have 0 < i
             .constrain(1, 2, Inequality::LS(4))
             .constrain(2, 3, Inequality::LS(3));
-        let new_fed = remove_clock_from_federation(&fed, 1, None);
+        let new_fed = remove_clock_from_federation(&fed, &1, None);
         assert_eq!(new_fed.dim(), 3);
         assert_eq!(
             new_fed

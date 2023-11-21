@@ -2,7 +2,7 @@ use edbm::util::constraints::ClockIndex;
 use edbm::zones::OwnedFederation;
 use log::debug;
 
-use crate::model_objects::{Declarations, State, Transition};
+use crate::model_objects::{State, Transition};
 use crate::system::query_failures::{
     ActionFailure, ConsistencyResult, DeterminismResult, SystemRecipeFailure,
 };
@@ -10,6 +10,7 @@ use crate::system::specifics::{SpecialLocation, SpecificLocation};
 use crate::transition_systems::compiled_update::CompiledUpdate;
 use edbm::util::bounds::Bounds;
 
+use crate::model_objects::declarations::Declarations;
 use crate::transition_systems::{
     LocationTree, TransitionID, TransitionSystem, TransitionSystemPtr,
 };
@@ -389,13 +390,20 @@ impl TransitionSystem for Quotient {
         CompositionType::Quotient
     }
 
-    fn remove_clock(&mut self, clock_index: ClockIndex) -> Result<(), String> {
-        if self.quotient_clock_index == clock_index {
-            panic!("Can't remove quotient");
+    fn remove_clocks(&mut self, clocks: &Vec<ClockIndex>) -> Result<(), String> {
+        // Given that clocks 1,2,3 needs to be removed and quotient is 4, then quotient needs to be moved 3 clocks down
+        let clocks_less_or_equal =
+            clocks.partition_point(|clock| clock <= &self.quotient_clock_index);
+        if clocks[clocks_less_or_equal] == self.quotient_clock_index {
+            return Err("Can't remove quotient".to_string()); // theoretically should be possible
         }
+        self.quotient_clock_index -= clocks_less_or_equal;
+
         let (a, b) = self.get_children_mut();
-        a.remove_clock(clock_index)?; // remove if not ok
-        b.remove_clock(clock_index)
+        a.remove_clocks(clocks)?;
+        b.remove_clocks(clocks)?;
+        self.dim = a.get_dim() + b.get_dim() + 1;
+        Ok(())
     }
 
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String> {

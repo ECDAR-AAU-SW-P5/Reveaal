@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod reachability_partial_states_test {
-    use crate::model_objects::{Declarations, Location, LocationType};
+    use crate::model_objects::declarations::Declarations;
+    use crate::model_objects::{Location, LocationType};
+    #[allow(unused_imports)] // RustRover thinks CompositionType is unused.
     use crate::transition_systems::CompositionType;
     use crate::transition_systems::LocationTree;
     use test_case::test_case;

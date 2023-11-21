@@ -4,7 +4,8 @@ pub mod test {
         create_clock_name_to_index, get_composition_transition_system,
         get_conjunction_transition_system,
     };
-    use crate::transition_systems::transition_system::ClockReductionInstruction;
+    use crate::transition_systems::clock_reduction::clock_reduction_instruction::ClockReductionInstruction;
+    use crate::transition_systems::clock_reduction::reduction::find_redundant_clocks;
     use std::path::Path;
 
     const ADVANCED_CLOCK_REDUCTION_PATH: &str =
@@ -20,7 +21,7 @@ pub mod test {
 
         let clock_name_to_index = create_clock_name_to_index(&transition_system);
 
-        let clock_reduction_instruction = transition_system.find_redundant_clocks();
+        let clock_reduction_instruction = find_redundant_clocks(&transition_system);
 
         assert_eq!(
             clock_reduction_instruction.len(),
@@ -61,7 +62,7 @@ pub mod test {
 
         let clock_name_to_index = create_clock_name_to_index(&transition_system);
 
-        let clock_reduction_instruction = transition_system.find_redundant_clocks();
+        let clock_reduction_instruction = find_redundant_clocks(&transition_system);
 
         assert_eq!(
             clock_reduction_instruction.len(),
@@ -102,7 +103,7 @@ pub mod test {
 
         let clock_name_to_index = create_clock_name_to_index(&transition_system);
 
-        let clock_reduction_instruction = transition_system.find_redundant_clocks();
+        let clock_reduction_instruction = find_redundant_clocks(&transition_system);
 
         assert_eq!(
             clock_reduction_instruction.len(),
@@ -141,7 +142,7 @@ pub mod test {
             "Component2",
         );
 
-        let clock_reduction_instruction = transition_system.find_redundant_clocks();
+        let clock_reduction_instruction = find_redundant_clocks(&transition_system);
 
         assert_eq!(
             clock_reduction_instruction.len(),
@@ -158,7 +159,7 @@ pub mod test {
             "Component2",
         );
 
-        let clock_reduction_instruction = transition_system.find_redundant_clocks();
+        let clock_reduction_instruction = find_redundant_clocks(&transition_system);
 
         assert_eq!(
             clock_reduction_instruction.len(),

@@ -1,8 +1,8 @@
+use crate::model_objects::declarations::Declarations;
 use edbm::util::constraints::{ClockIndex, Inequality};
 use edbm::zones::OwnedFederation;
 
 use crate::model_objects::expressions::{ArithExpression, BoolExpression, Clock};
-use crate::model_objects::Declarations;
 
 pub fn apply_constraints_to_state(
     guard: &BoolExpression,
@@ -271,8 +271,8 @@ fn get_clock_val(
 #[cfg(test)]
 mod test {
     use super::get_indices;
+    use crate::model_objects::declarations::Declarations;
     use crate::model_objects::expressions::ArithExpression;
-    use crate::model_objects::Declarations;
     use std::collections::HashMap;
 
     #[test]

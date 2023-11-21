@@ -4,7 +4,7 @@ pub mod test {
     use crate::extract_system_rep::SystemRecipe;
     use crate::model_objects::Component;
     use crate::system::input_enabler;
-    use crate::transition_systems::transition_system::ClockReductionInstruction;
+    use crate::transition_systems::clock_reduction::clock_reduction_instruction::ClockReductionInstruction;
     use crate::transition_systems::TransitionSystemPtr;
     use crate::{JsonProjectLoader, DEFAULT_SETTINGS};
     use edbm::util::constraints::ClockIndex;

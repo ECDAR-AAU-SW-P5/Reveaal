@@ -1,8 +1,9 @@
 use edbm::zones::OwnedFederation;
 
 use crate::edge_eval::constraint_applier;
+use crate::model_objects::declarations::DeclarationProvider;
 use crate::model_objects::expressions::BoolExpression;
-use crate::model_objects::{Component, DeclarationProvider, Edge, SyncType};
+use crate::model_objects::{Component, Edge, SyncType};
 
 pub fn make_input_enabled(component: &mut Component, inputs: &[String]) {
     let dimension = component.declarations.get_clock_count() + 1;

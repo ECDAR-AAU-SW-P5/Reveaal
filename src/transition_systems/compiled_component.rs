@@ -1,9 +1,11 @@
-use crate::model_objects::{Component, DeclarationProvider, Declarations, State, Transition};
+use crate::model_objects::declarations::{DeclarationProvider, Declarations};
+use crate::model_objects::{Component, State, Transition};
 use crate::system::local_consistency::{self};
 use crate::system::query_failures::{
     ActionFailure, ConsistencyResult, DeterminismResult, SystemRecipeFailure,
 };
 use crate::system::specifics::SpecificLocation;
+use crate::transition_systems::clock_reduction::clock_removal::remove_clock_from_federation;
 use crate::transition_systems::{LocationTree, TransitionSystem, TransitionSystemPtr};
 use edbm::util::bounds::Bounds;
 use edbm::util::constraints::ClockIndex;
@@ -11,8 +13,6 @@ use std::collections::hash_set::HashSet;
 use std::collections::HashMap;
 use std::iter::FromIterator;
 use CompositionType::Simple;
-use crate::transition_systems::clock_reduction::clock_removal::remove_clock_from_federation;
-use crate::transition_systems::compiled_update::CompiledUpdate;
 
 use super::transition_system::ComponentInfoTree;
 use super::{CompositionType, LocationID};
@@ -213,34 +213,36 @@ impl TransitionSystem for CompiledComponent {
         vec![&self.comp_info.name]
     }
 
-    fn remove_clock(&mut self, clock_index: ClockIndex) -> Result<(), String> {
+    fn remove_clocks(&mut self, clocks: &Vec<ClockIndex>) -> Result<(), String> {
         // Remove clock from Declarations
-        match self.comp_info.declarations.get_clock_name_by_index(clock_index) {
-            None => {}
-            Some(christian) => {
-                self.comp_info.declarations.clocks.remove(christian);
-            }
-        }
+        self.comp_info.declarations.remove_clocks(clocks);
         // Remove clock from Locations
         for loc in self.locations.values_mut() {
             // Remove from Invariant
-            match &loc.invariant {
-                None => {}
-                Some(mut inv) => {
-                    inv = remove_clock_from_federation(&inv, clock_index, None);
+            for clock in clocks {
+                // todo: replace with remove many
+                match &loc.invariant {
+                    None => {}
+                    Some(inv) => {
+                        loc.invariant = Some(remove_clock_from_federation(&inv, clock, None));
+                    }
                 }
             }
         }
         // Remove clock from Edges
-        for b in self.location_edges.values_mut() {
-            for (_, transition) in b.iter_mut() {
-                // Remove clock from Guard
-                transition.guard_zone = remove_clock_from_federation(&transition.guard_zone, clock_index, None);
+        for edge in self.location_edges.values_mut() {
+            for (_, transition) in edge.iter_mut() {
+                // todo: replace with remove many
+                for clock in clocks {
+                    // Remove clock from Guard
+                    transition.guard_zone =
+                        remove_clock_from_federation(&transition.guard_zone, clock, None);
+                }
 
                 // Remove clock from Update
-                transition.updates = transition.updates.into_iter()
-                    .filter(|update| update.clock_index != clock_index)
-                    .collect::<Vec<CompiledUpdate>>()
+                transition
+                    .updates
+                    .retain(|update| !clocks.contains(&update.clock_index));
             }
         }
         Ok(())

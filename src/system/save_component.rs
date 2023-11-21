@@ -1,16 +1,16 @@
+use crate::model_objects::declarations::Declarations;
 use crate::model_objects::expressions::BoolExpression;
-use crate::model_objects::{Component, Declarations, Location, LocationType, SyncType};
+use crate::model_objects::Edge;
+use crate::model_objects::{Component, Location, LocationType, SyncType};
 use crate::transition_systems::{LocationTree, TransitionSystemPtr};
+use edbm::util::constraints::ClockIndex;
 use std::collections::HashMap;
+use PruningStrategy::*;
 
 pub enum PruningStrategy {
     Reachable,
     NoPruning,
 }
-
-use crate::model_objects::Edge;
-use edbm::util::constraints::ClockIndex;
-use PruningStrategy::*;
 
 pub fn combine_components(
     system: &TransitionSystemPtr,

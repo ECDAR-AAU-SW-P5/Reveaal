@@ -1,21 +1,19 @@
+use crate::model_objects::declarations::Declarations;
+use crate::model_objects::{State, Transition};
+use crate::system::query_failures::{ConsistencyResult, DeterminismResult};
+use crate::system::specifics::SpecificLocation;
+use crate::transition_systems::{
+    CompositionType, LocationTree, TransitionSystem, TransitionSystemPtr,
+};
+use dyn_clone::{clone_trait_object, DynClone};
+use edbm::util::bounds::Bounds;
+use edbm::util::constraints::ClockIndex;
+use edbm::zones::OwnedFederation;
+use log::warn;
 use std::collections::HashSet;
 
-use dyn_clone::{clone_trait_object, DynClone};
-use edbm::{
-    util::{bounds::Bounds, constraints::ClockIndex},
-    zones::OwnedFederation,
-};
-use log::warn;
-
-use crate::model_objects::{Declarations, State, Transition};
-use crate::system::{
-    query_failures::{ConsistencyResult, DeterminismResult},
-    specifics::SpecificLocation,
-};
-use crate::transition_systems::CompositionType;
-
-use super::{LocationTree, TransitionSystem, TransitionSystemPtr};
-
+/// Methods which are dependant on whether the ComposedTransitionSystem is a
+/// [crate::transition_systems::conjunction] or [crate::transition_systems::Composition]
 pub(super) trait ComposedTransitionSystem: DynClone {
     fn next_transitions(&self, location: &LocationTree, action: &str) -> Vec<Transition>;
 
@@ -28,6 +26,7 @@ pub(super) trait ComposedTransitionSystem: DynClone {
     fn get_composition_type(&self) -> CompositionType;
 
     fn get_dim(&self) -> ClockIndex;
+    fn set_dim(&mut self, dim: ClockIndex);
 
     fn get_input_actions(&self) -> HashSet<String>;
 
@@ -36,6 +35,7 @@ pub(super) trait ComposedTransitionSystem: DynClone {
 
 clone_trait_object!(ComposedTransitionSystem);
 
+/// Methods which are independent on whether the ComposedTransitionSystem is a [Conjunction] or [Composition]
 impl<T: ComposedTransitionSystem> TransitionSystem for T {
     fn get_local_max_bounds(&self, loc: &LocationTree) -> Bounds {
         let (left, right) = self.get_children();
@@ -134,10 +134,13 @@ impl<T: ComposedTransitionSystem> TransitionSystem for T {
         self.get_composition_type()
     }
 
-    fn remove_clock(&mut self, clock_index: ClockIndex) -> Result<(), String> {
+    fn remove_clocks(&mut self, clocks: &Vec<ClockIndex>) -> Result<(), String> {
         let (left, right) = self.get_children_mut();
-        left.remove_clock(clock_index)?; // return if not ok
-        right.remove_clock(clock_index)
+        left.remove_clocks(clocks)?; // return if not ok
+        right.remove_clocks(clocks)?;
+        let new_dim = right.get_dim() + left.get_dim();
+        self.set_dim(new_dim);
+        Ok(())
     }
 
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String> {

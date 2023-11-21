@@ -4,7 +4,8 @@ use crate::transition_systems::compiled_update::CompiledUpdate;
 
 use crate::model_objects::expressions::{ArithExpression, BoolExpression};
 
-use crate::{data_reader::serialization::encode_arithexpr, model_objects::Declarations};
+use crate::data_reader::serialization::encode_arithexpr;
+use crate::model_objects::declarations::Declarations;
 use edbm::util::constraints::ClockIndex;
 use pest::pratt_parser::{Assoc, Op, PrattParser};
 use pest::Parser;

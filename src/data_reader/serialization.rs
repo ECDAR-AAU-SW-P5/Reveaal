@@ -1,6 +1,7 @@
 use crate::data_reader::parse_edge;
+use crate::model_objects::declarations::Declarations;
 use crate::model_objects::expressions;
-use crate::model_objects::{Component, Declarations, Edge, Location, LocationType, SyncType};
+use crate::model_objects::{Component, Edge, Location, LocationType, SyncType};
 use crate::simulation::graph_layout::layout_dummy_component;
 use edbm::util::constraints::ClockIndex;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};

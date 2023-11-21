@@ -3,8 +3,9 @@ pub mod test {
     const ADVANCED_CLOCK_REDUCTION_PATH: &str =
         "samples/json/ClockReductionTest/AdvancedClockReduction";
 
-    use crate::extract_system_rep::clock_reduction;
     use crate::tests::clock_reduction::helper::test::get_conjunction_system_recipe;
+    use crate::transition_systems::clock_reduction;
+    use crate::transition_systems::clock_reduction::reduction::get_analysis_graph;
     use std::collections::HashSet;
     use std::path::Path;
 
@@ -29,7 +30,8 @@ pub mod test {
             assert!(location.invariant.is_none(), "Should contain no invariants")
         }
 
-        let graph = compiled.get_analysis_graph();
+        let graph = get_analysis_graph(&compiled);
+
         for edge in &graph.edges {
             match format!("{}->{}", edge.from, edge.to).as_str() {
                 "(L0&&L4)->(L1&&L5)" => {

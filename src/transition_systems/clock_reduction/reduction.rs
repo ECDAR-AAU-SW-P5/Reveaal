@@ -1,20 +1,21 @@
-use std::collections::{HashMap, HashSet, VecDeque};
-use edbm::util::constraints::{ClockIndex};
-use log::debug;
-use crate::model_objects::{Component};
 use crate::system::query_failures::SystemRecipeFailure;
-use crate::transition_systems::{LocationTree, TransitionSystem, TransitionSystemPtr};
-use crate::transition_systems::clock_reduction::clock_analysis_graph::{ClockAnalysisEdge, ClockAnalysisGraph, ClockAnalysisNode};
+use crate::transition_systems::clock_reduction::clock_analysis_graph::{
+    ClockAnalysisEdge, ClockAnalysisGraph, ClockAnalysisNode,
+};
 use crate::transition_systems::clock_reduction::clock_reduction_instruction::ClockReductionInstruction;
+use crate::transition_systems::{LocationTree, TransitionSystemPtr};
+use edbm::util::constraints::ClockIndex;
+use log::debug;
+use std::collections::{HashSet, VecDeque};
 
 /// Function for a "safer" clock reduction that handles both the dimension of the DBM and the quotient index if needed be
 /// # Arguments
-/// `lhs`: The (main) [`SystemRecipe`] to clock reduce\n
-/// `rhs`: An optional [`SystemRecipe`] used for multiple operands (Refinement)\n
+/// `lhs`: The (main) [`TransitionSystemPtr`] to clock reduce\n
+/// `rhs`: An optional [`TransitionSystemPtr`] used for multiple operands (Refinement)\n
 /// `dim`: A mutable reference to the DBMs dimension for updating\n
 /// `quotient_clock`: The clock for the quotient (This is not reduced)
 /// # Returns
-/// A `Result` used if the [`SystemRecipe`](s) fail during compilation
+/// A `Result` used if the [`TransitionSystemPtr`](s) fails
 pub fn clock_reduce(
     lhs: &mut TransitionSystemPtr,
     rhs: Option<&mut TransitionSystemPtr>,
@@ -29,14 +30,10 @@ pub fn clock_reduce(
     let rhs = rhs.unwrap();
 
     let (l_clocks, r_clocks) = filter_redundant_clocks(
-        lhs.clone().compile(*dim)?.find_redundant_clocks(),
-        rhs.clone().compile(*dim)?.find_redundant_clocks(),
+        find_redundant_clocks(lhs),
+        find_redundant_clocks(rhs),
         quotient_clock,
-        lhs.get_components_mut()
-            .iter()
-            .flat_map(|c| c.declarations.clocks.values().cloned())
-            .max()
-            .unwrap_or_default(),
+        lhs.get_dim(),
     );
 
     debug!("Clocks to be reduced: {l_clocks:?} + {r_clocks:?}");
@@ -46,13 +43,23 @@ pub fn clock_reduce(
         .fold(0, |acc, c| acc + c.clocks_removed_count());
     debug!("New dimension: {dim}");
 
-    rhs.reduce_clocks(r_clocks);
-    lhs.reduce_clocks(l_clocks);
-    compress_component_decls(lhs.get_components_mut(), Some(rhs.get_components_mut()));
-    if quotient_clock.is_some() {
-        lhs.change_quotient(*dim);
-        rhs.change_quotient(*dim);
-    }
+    let l_clocks = l_clocks
+        .iter()
+        .filter_map(|shit_instruction| match shit_instruction {
+            ClockReductionInstruction::RemoveClock { clock_index } => Some(*clock_index),
+            ClockReductionInstruction::ReplaceClocks { .. } => None,
+        })
+        .collect::<Vec<ClockIndex>>();
+    let r_clocks = r_clocks
+        .iter()
+        .filter_map(|shit_instruction| match shit_instruction {
+            ClockReductionInstruction::RemoveClock { clock_index } => Some(*clock_index),
+            ClockReductionInstruction::ReplaceClocks { .. } => None,
+        })
+        .collect::<Vec<ClockIndex>>();
+
+    rhs.remove_clocks(&r_clocks).unwrap();
+    lhs.remove_clocks(&l_clocks).unwrap();
 
     Ok(())
 }
@@ -70,18 +77,21 @@ fn clock_reduce_single(
     dim: &mut usize,
     quotient_clock: Option<ClockIndex>,
 ) -> Result<(), Box<SystemRecipeFailure>> {
-    let mut clocks = sys.clone().compile(*dim)?.find_redundant_clocks();
+    let mut clocks = find_redundant_clocks(sys);
     clocks.retain(|ins| ins.get_clock_index() != quotient_clock.unwrap_or_default());
     debug!("Clocks to be reduced: {clocks:?}");
     *dim -= clocks
         .iter()
         .fold(0, |acc, c| acc + c.clocks_removed_count());
     debug!("New dimension: {dim}");
-    sys.reduce_clocks(clocks);
-    compress_component_decls(sys.get_components_mut(), None);
-    if quotient_clock.is_some() {
-        sys.change_quotient(*dim);
-    }
+    let clocks = clocks
+        .iter()
+        .filter_map(|shit_instruction| match shit_instruction {
+            ClockReductionInstruction::RemoveClock { clock_index } => Some(*clock_index),
+            ClockReductionInstruction::ReplaceClocks { .. } => None,
+        })
+        .collect::<Vec<ClockIndex>>();
+    sys.remove_clocks(&clocks).unwrap();
     Ok(())
 }
 
@@ -123,37 +133,14 @@ fn filter_redundant_clocks(
     )
 }
 
-fn compress_component_decls(
-    mut comps: Vec<&mut Component>,
-    other: Option<Vec<&mut Component>>,
-) {
-    let mut seen: HashMap<ClockIndex, ClockIndex> = HashMap::new();
-    let mut l: Vec<&mut ClockIndex> = comps
-        .iter_mut()
-        .flat_map(|c| c.declarations.clocks.values_mut())
-        .collect();
-    let mut temp = other.unwrap_or_default();
-    l.extend(
-        temp.iter_mut()
-            .flat_map(|c| c.declarations.clocks.values_mut()),
-    );
-    l.sort();
-    let mut index = 1;
-    for clock in l {
-        if let Some(val) = seen.get(clock) {
-            *clock = *val;
-        } else {
-            seen.insert(*clock, index);
-            *clock = index;
-            index += 1;
-        }
-    }
-}
-
 ///Helper function to recursively traverse all transitions in a transitions system
 ///in order to find all transitions and location in the transition system, and
 ///saves these as [ClockAnalysisEdge]s and [ClockAnalysisNode]s in the [ClockAnalysisGraph]
-pub fn find_edges_and_nodes(system: &dyn TransitionSystem, init_location: LocationTree, graph: &mut ClockAnalysisGraph) {
+pub fn find_edges_and_nodes(
+    system: &TransitionSystemPtr,
+    init_location: LocationTree,
+    graph: &mut ClockAnalysisGraph,
+) {
     let mut worklist = VecDeque::from([init_location]);
     let actions = system.get_actions();
     while let Some(location) = worklist.pop_front() {
@@ -207,4 +194,14 @@ pub fn find_edges_and_nodes(system: &dyn TransitionSystem, init_location: Locati
         }
     }
 }
+pub fn find_redundant_clocks(system: &TransitionSystemPtr) -> Vec<ClockReductionInstruction> {
+    get_analysis_graph(system).find_clock_redundancies()
+}
 
+/// Constructs a [ClockAnalysisGraph] where nodes represents locations and Edges represent transitions
+pub fn get_analysis_graph(system: &TransitionSystemPtr) -> ClockAnalysisGraph {
+    let mut graph: ClockAnalysisGraph = ClockAnalysisGraph::from_dim(system.get_dim());
+    find_edges_and_nodes(system, system.get_initial_location().unwrap(), &mut graph);
+
+    graph
+}

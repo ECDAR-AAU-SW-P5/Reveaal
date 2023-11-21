@@ -1,6 +1,7 @@
 use super::ComponentInfo;
 use super::{CompositionType, LocationID, LocationTree};
-use crate::model_objects::{Component, Declarations, State, Transition};
+use crate::model_objects::declarations::Declarations;
+use crate::model_objects::{Component, State, Transition};
 use crate::parse_queries::parse_to_system_expr;
 use crate::system::query_failures::{ConsistencyResult, DeterminismResult};
 use crate::system::specifics::SpecificLocation;
@@ -10,10 +11,7 @@ use crate::{
 };
 use dyn_clone::{clone_trait_object, DynClone};
 use edbm::util::{bounds::Bounds, constraints::ClockIndex};
-use std::collections::{hash_set::HashSet};
-use crate::transition_systems::clock_reduction::clock_analysis_graph::ClockAnalysisGraph;
-use crate::transition_systems::clock_reduction::clock_reduction_instruction::ClockReductionInstruction;
-use crate::transition_systems::clock_reduction::reduction::find_edges_and_nodes;
+use std::collections::hash_set::HashSet;
 
 pub type TransitionSystemPtr = Box<dyn TransitionSystem>;
 pub type Action = String;
@@ -55,7 +53,11 @@ impl<'a> ComponentInfoTree<'a> {
         }
     }
 }
-
+/// Equal to an abstract class in a composite pattern for a given transition system
+/// A Transition system can be a single [crate::transition_systems::compiled_component] or multiple
+/// put together as either a [crate::transition_systems::quotient] or a [crate::transition_systems::common::ComposedTransitionSystem]
+///
+/// A [ComposedTransitionSystem] can either be [Conjunction] or [Composition]
 pub trait TransitionSystem: DynClone {
     fn get_local_max_bounds(&self, loc: &LocationTree) -> Bounds;
     fn get_dim(&self) -> ClockIndex;
@@ -166,15 +168,8 @@ pub trait TransitionSystem: DynClone {
             .collect()
     }
 
-    /// Constructs a [ClockAnalysisGraph] where nodes represents locations and Edges represent transitions
-    fn find_redundant_clocks(&self) -> Vec<ClockReductionInstruction> {
-        // Construct graph
-        let mut graph: ClockAnalysisGraph = ClockAnalysisGraph::from_dim(self.get_dim());
-        find_edges_and_nodes(self, self.get_initial_location().unwrap(), &mut graph);
-
-        graph.find_clock_redundancies()
-    }
-    fn remove_clock(&mut self, clock_index: ClockIndex) -> Result<(), String>;
+    /// Assumes clocks are in order such as [1, 3, 4, 5]
+    fn remove_clocks(&mut self, clocks: &Vec<ClockIndex>) -> Result<(), String>;
 
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String>;
 }
@@ -187,7 +182,6 @@ pub fn components_to_transition_system(
     let mut component_container = ComponentContainer::from(components);
     component_loader_to_transition_system(&mut component_container, composition)
 }
-
 
 /// Returns a [`TransitionSystemPtr`] equivalent to a `composition` of some components in a [`ComponentLoader`].
 pub fn component_loader_to_transition_system(

@@ -2,7 +2,8 @@
 mod unused_clocks_tests {
     use crate::data_reader::json_reader::read_json_component;
     use crate::tests::clock_reduction::helper::test::assert_unused_clock_in_clock_reduction_instruction_vec;
-    use crate::transition_systems::{CompiledComponent, TransitionSystem};
+    use crate::transition_systems::clock_reduction::reduction::find_redundant_clocks;
+    use crate::transition_systems::{CompiledComponent, TransitionSystemPtr};
 
     /// Loads the sample in `samples/json/ClockReductionTest/UnusedClockWithCycle` which contains
     /// unused clocks. It then tests that these clocks are located correctly.
@@ -25,7 +26,7 @@ mod unused_clocks_tests {
             .get_clock_index_by_name(unused_clock)
             .unwrap();
 
-        let instructions = compiled_component.find_redundant_clocks();
+        let instructions = find_redundant_clocks(&(compiled_component as TransitionSystemPtr));
 
         assert_unused_clock_in_clock_reduction_instruction_vec(instructions, *clock_index)
     }
@@ -51,7 +52,7 @@ mod unused_clocks_tests {
             .get_clock_index_by_name(unused_clock)
             .unwrap();
 
-        let instructions = compiled_component.find_redundant_clocks();
+        let instructions = find_redundant_clocks(&(compiled_component as TransitionSystemPtr));
 
         assert_unused_clock_in_clock_reduction_instruction_vec(instructions, *clock_index)
     }

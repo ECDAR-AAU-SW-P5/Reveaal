@@ -3,7 +3,8 @@ pub mod test {
     use crate::tests::clock_reduction::helper::test::{
         assert_duplicate_clock_in_clock_reduction_instruction_vec, read_json_component_and_process,
     };
-    use crate::transition_systems::{CompiledComponent, TransitionSystem};
+    use crate::transition_systems::clock_reduction::reduction::find_redundant_clocks;
+    use crate::transition_systems::{CompiledComponent, TransitionSystemPtr};
     use edbm::util::constraints::ClockIndex;
     use std::collections::HashSet;
 
@@ -30,7 +31,7 @@ pub mod test {
             .get_clock_index_by_name(&expected_clocks[2])
             .unwrap();
 
-        let instructions = compiled_component.find_redundant_clocks();
+        let instructions = find_redundant_clocks(&(compiled_component as TransitionSystemPtr));
 
         assert_duplicate_clock_in_clock_reduction_instruction_vec(
             instructions,

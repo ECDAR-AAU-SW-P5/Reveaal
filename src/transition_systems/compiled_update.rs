@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::fmt;
 
 use crate::data_reader::parse_edge;
+use crate::model_objects::declarations::Declarations;
 use crate::model_objects::expressions::ArithExpression;
-use crate::model_objects::Declarations;
 use colored::Colorize;
 use edbm::util::constraints::ClockIndex;
 use edbm::zones::OwnedFederation;
