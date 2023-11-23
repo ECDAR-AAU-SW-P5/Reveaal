@@ -15,6 +15,7 @@ use crate::transition_systems::{
     LocationTree, TransitionID, TransitionSystem, TransitionSystemPtr,
 };
 use std::collections::hash_set::HashSet;
+use std::collections::HashMap;
 use std::vec;
 
 use super::CompositionType;
@@ -391,7 +392,6 @@ impl TransitionSystem for Quotient {
     }
 
     fn remove_clocks(&mut self, clocks: &Vec<ClockIndex>) -> Result<(), String> {
-        // Given that clocks 1,2,3 needs to be removed and quotient is 4, then quotient needs to be moved 3 clocks down
         let clocks_less_or_equal =
             clocks.partition_point(|clock| clock <= &self.quotient_clock_index);
         if clocks[clocks_less_or_equal] == self.quotient_clock_index {
@@ -402,7 +402,28 @@ impl TransitionSystem for Quotient {
         let (a, b) = self.get_children_mut();
         a.remove_clocks(clocks)?;
         b.remove_clocks(clocks)?;
-        self.dim = a.get_dim() + b.get_dim() + 1;
+        self.dim = a.get_dim() + b.get_dim() + 1; // +1 for quotient
+        Ok(())
+    }
+
+    fn replace_clocks(&mut self, clocks: &HashMap<ClockIndex, ClockIndex>) -> Result<(), String> {
+        match clocks.get(&self.quotient_clock_index) {
+            None => {}
+            Some(clock) => {
+                self.quotient_clock_index = *clock;
+                self.decls.replace_clocks(clocks);
+            }
+        }
+        let clocks_less_or_equal = clocks
+            .keys()
+            .filter(|old_clock| old_clock < &&self.quotient_clock_index)
+            .count();
+        self.quotient_clock_index -= clocks_less_or_equal;
+
+        let (a, b) = self.get_children_mut();
+        a.replace_clocks(clocks)?;
+        b.replace_clocks(clocks)?;
+        self.dim = a.get_dim() + b.get_dim() + 1; // +1 for quotient
         Ok(())
     }
 

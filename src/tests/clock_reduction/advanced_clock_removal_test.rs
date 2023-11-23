@@ -4,8 +4,7 @@ pub mod test {
         "samples/json/ClockReductionTest/AdvancedClockReduction";
 
     use crate::tests::clock_reduction::helper::test::get_conjunction_system_recipe;
-    use crate::transition_systems::clock_reduction;
-    use crate::transition_systems::clock_reduction::reduction::get_analysis_graph;
+    use crate::transition_systems::clock_reduction::reduction::{clock_reduce, get_analysis_graph};
     use std::collections::HashSet;
     use std::path::Path;
 
@@ -17,14 +16,13 @@ pub mod test {
             "Component2",
         );
 
-        let mut system_recipe_copy = Box::new(system_recipe);
-
-        clock_reduction::clock_reduce(&mut system_recipe_copy, None, &mut dimensions, None)
-            .unwrap();
+        let system_recipe_copy = Box::new(system_recipe);
 
         //We let it use the unreduced amount of dimensions so we can catch the error
         //If a clock is not reduced
-        let compiled = system_recipe_copy.compile(dimensions).unwrap();
+        let mut compiled = system_recipe_copy.compile(dimensions).unwrap();
+
+        clock_reduce(&mut compiled, None, &mut dimensions, None).unwrap();
 
         for location in compiled.get_all_locations() {
             assert!(location.invariant.is_none(), "Should contain no invariants")

@@ -43,6 +43,7 @@ impl Declarations {
             .find(|(_, v)| **v == index)
             .map(|(k, _)| k)
     }
+
     pub fn remove_clocks(&mut self, clocks_to_be_removed: &Vec<ClockIndex>) {
         let mut clock_count = *self.clocks.values().next().unwrap_or(&(1usize));
         let mut new_clocks: HashMap<String, ClockIndex> = HashMap::new();
@@ -57,5 +58,16 @@ impl Declarations {
         }
 
         self.clocks = new_clocks;
+    }
+
+    pub fn replace_clocks(&mut self, clock_replacements: &HashMap<ClockIndex, ClockIndex>) {
+        for (clock_to_be_replaced, new_clock) in clock_replacements {
+            for (_, clock) in self.clocks.iter_mut() {
+                if clock == clock_to_be_replaced {
+                    *clock = *new_clock;
+                    break;
+                }
+            }
+        }
     }
 }

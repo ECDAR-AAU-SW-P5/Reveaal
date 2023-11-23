@@ -6,6 +6,7 @@ use crate::system::query_failures::{
 };
 use crate::system::specifics::SpecificLocation;
 use crate::transition_systems::clock_reduction::clock_removal::remove_clock_from_federation;
+use crate::transition_systems::compiled_update::CompiledUpdate;
 use crate::transition_systems::{LocationTree, TransitionSystem, TransitionSystemPtr};
 use edbm::util::bounds::Bounds;
 use edbm::util::constraints::ClockIndex;
@@ -220,7 +221,7 @@ impl TransitionSystem for CompiledComponent {
         for loc in self.locations.values_mut() {
             // Remove from Invariant
             for clock in clocks {
-                // todo: replace with remove many
+                // todo: replace with remove_many
                 match &loc.invariant {
                     None => {}
                     Some(inv) => {
@@ -232,7 +233,7 @@ impl TransitionSystem for CompiledComponent {
         // Remove clock from Edges
         for edge in self.location_edges.values_mut() {
             for (_, transition) in edge.iter_mut() {
-                // todo: replace with remove many
+                // todo: replace with remove_many
                 for clock in clocks {
                     // Remove clock from Guard
                     transition.guard_zone =
@@ -245,6 +246,63 @@ impl TransitionSystem for CompiledComponent {
                     .retain(|update| !clocks.contains(&update.clock_index));
             }
         }
+
+        self.dim -= clocks.len();
+        Ok(())
+    }
+
+    fn replace_clocks(&mut self, clocks: &HashMap<ClockIndex, ClockIndex>) -> Result<(), String> {
+        // Replace clock from Declarations
+        self.comp_info.declarations.replace_clocks(clocks);
+        // Replace clock from Locations
+        for loc in self.locations.values_mut() {
+            // Replace from Invariant
+            for (clock_to_be_replaced, new_clock) in clocks {
+                // todo: replace with replace_many
+                match &loc.invariant {
+                    None => {}
+                    Some(inv) => {
+                        loc.invariant = Some(remove_clock_from_federation(
+                            &inv,
+                            clock_to_be_replaced,
+                            Some(new_clock),
+                        ));
+                    }
+                }
+            }
+        }
+        // Replace clock from Edges
+        for edge in self.location_edges.values_mut() {
+            for (_, transition) in edge.iter_mut() {
+                // todo: replace with replace_many
+                for (clock_to_be_replaced, new_clock) in clocks {
+                    // Replace clock from Guard
+                    transition.guard_zone = remove_clock_from_federation(
+                        &transition.guard_zone,
+                        clock_to_be_replaced,
+                        Some(new_clock),
+                    );
+                }
+
+                // Replace clock from Updates in Edge
+                transition.updates = transition
+                    .updates
+                    .iter()
+                    .map(|update| match clocks.get(&update.clock_index) {
+                        None => CompiledUpdate {
+                            clock_index: update.clock_index,
+                            value: update.value,
+                        },
+                        Some(clock) => CompiledUpdate {
+                            clock_index: *clock,
+                            value: update.value,
+                        },
+                    })
+                    .collect();
+            }
+        }
+
+        self.dim -= clocks.len();
         Ok(())
     }
 

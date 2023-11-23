@@ -36,7 +36,8 @@ pub fn json_refinement_check(path: &str, query: &str) -> bool {
 
 pub fn xml_run_query(path: &str, query: &str) -> QueryResult {
     let project_path = String::from(path);
-    let project_loader = XmlProjectLoader::new_loader(project_path, crate::tests::TEST_SETTINGS);
+    let mut project_loader =
+        XmlProjectLoader::new_loader(project_path, crate::tests::TEST_SETTINGS);
     let query = parse_queries::parse_to_expression_tree(query)
         .unwrap()
         .remove(0);
@@ -44,6 +45,8 @@ pub fn xml_run_query(path: &str, query: &str) -> QueryResult {
         query: Option::from(query),
         comment: "".to_string(),
     };
+
+    project_loader.get_settings_mut().disable_clock_reduction = true;
 
     let mut comp_loader = project_loader.to_comp_loader();
     let query = create_executable_query(&q, &mut *comp_loader).unwrap();
@@ -52,7 +55,7 @@ pub fn xml_run_query(path: &str, query: &str) -> QueryResult {
 }
 
 pub fn json_run_query(path: &str, query: &str) -> Result<QueryResult, ExecutableQueryError> {
-    let project_loader =
+    let mut project_loader =
         JsonProjectLoader::new_loader(String::from(path), crate::tests::TEST_SETTINGS);
     let query = parse_queries::parse_to_expression_tree(query)
         .unwrap()
@@ -61,6 +64,8 @@ pub fn json_run_query(path: &str, query: &str) -> Result<QueryResult, Executable
         query: Option::from(query),
         comment: "".to_string(),
     };
+
+    project_loader.get_settings_mut().disable_clock_reduction = true;
 
     let mut comp_loader = project_loader.to_comp_loader();
     let query = create_executable_query(&q, &mut *comp_loader)?;

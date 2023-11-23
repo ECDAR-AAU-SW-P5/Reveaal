@@ -6,7 +6,7 @@ use crate::transition_systems::clock_reduction::clock_reduction_instruction::Clo
 use crate::transition_systems::{LocationTree, TransitionSystemPtr};
 use edbm::util::constraints::ClockIndex;
 use log::debug;
-use std::collections::{HashSet, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 /// Function for a "safer" clock reduction that handles both the dimension of the DBM and the quotient index if needed be
 /// # Arguments
@@ -43,23 +43,13 @@ pub fn clock_reduce(
         .fold(0, |acc, c| acc + c.clocks_removed_count());
     debug!("New dimension: {dim}");
 
-    let l_clocks = l_clocks
-        .iter()
-        .filter_map(|shit_instruction| match shit_instruction {
-            ClockReductionInstruction::RemoveClock { clock_index } => Some(*clock_index),
-            ClockReductionInstruction::ReplaceClocks { .. } => None,
-        })
-        .collect::<Vec<ClockIndex>>();
-    let r_clocks = r_clocks
-        .iter()
-        .filter_map(|shit_instruction| match shit_instruction {
-            ClockReductionInstruction::RemoveClock { clock_index } => Some(*clock_index),
-            ClockReductionInstruction::ReplaceClocks { .. } => None,
-        })
-        .collect::<Vec<ClockIndex>>();
+    let (l_remove_clocks, l_replace_clocks) = extract_remove_and_replace_from_instruction(l_clocks);
+    let (r_remove_clocks, r_replace_clocks) = extract_remove_and_replace_from_instruction(r_clocks);
 
-    rhs.remove_clocks(&r_clocks).unwrap();
-    lhs.remove_clocks(&l_clocks).unwrap();
+    lhs.remove_clocks(&l_remove_clocks).unwrap();
+    rhs.remove_clocks(&r_remove_clocks).unwrap();
+    lhs.replace_clocks(&l_replace_clocks).unwrap();
+    rhs.replace_clocks(&r_replace_clocks).unwrap();
 
     Ok(())
 }
@@ -84,15 +74,34 @@ fn clock_reduce_single(
         .iter()
         .fold(0, |acc, c| acc + c.clocks_removed_count());
     debug!("New dimension: {dim}");
-    let clocks = clocks
-        .iter()
-        .filter_map(|shit_instruction| match shit_instruction {
-            ClockReductionInstruction::RemoveClock { clock_index } => Some(*clock_index),
-            ClockReductionInstruction::ReplaceClocks { .. } => None,
-        })
-        .collect::<Vec<ClockIndex>>();
-    sys.remove_clocks(&clocks).unwrap();
+    let (remove_clocks, replace_clocks) = extract_remove_and_replace_from_instruction(clocks);
+    sys.remove_clocks(&remove_clocks).unwrap();
+    sys.replace_clocks(&replace_clocks).unwrap();
     Ok(())
+}
+
+//todo fix clockreductioninstruction
+fn extract_remove_and_replace_from_instruction(
+    instructions: Vec<ClockReductionInstruction>,
+) -> (Vec<ClockIndex>, HashMap<ClockIndex, ClockIndex>) {
+    let mut remove_clocks: Vec<ClockIndex> = Vec::new();
+    let mut replace_clocks: HashMap<ClockIndex, ClockIndex> = HashMap::new();
+    for instruction in instructions {
+        match instruction {
+            ClockReductionInstruction::RemoveClock { clock_index } => {
+                remove_clocks.push(clock_index)
+            }
+            ClockReductionInstruction::ReplaceClocks {
+                clock_index,
+                clock_indices,
+            } => {
+                for remove_clock in clock_indices {
+                    replace_clocks.insert(remove_clock, clock_index);
+                }
+            }
+        }
+    }
+    return (remove_clocks, replace_clocks);
 }
 
 fn filter_redundant_clocks(

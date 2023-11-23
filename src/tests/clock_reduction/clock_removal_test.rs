@@ -2,17 +2,17 @@
 pub mod clock_removal_tests {
     use crate::data_reader::json_reader::read_json_component;
     use crate::extract_system_rep::SystemRecipe;
-    use crate::model_objects::Component;
     use crate::tests::refinement::helper::json_run_query;
-    use crate::transition_systems::{clock_reduction, CompiledComponent, TransitionSystem};
-    use std::collections::HashSet;
+    use crate::transition_systems::clock_reduction::reduction::clock_reduce;
+    use crate::transition_systems::{CompiledComponent, TransitionSystem, TransitionSystemPtr};
+    use std::collections::HashMap;
     use test_case::test_case;
 
     #[test_case("Component1", "x"; "Component1 x")]
     #[test_case("Component2", "i"; "Component2 i")]
     #[test_case("Component3", "c"; "Component3 c")]
     fn test_check_declarations_unused_clocks_are_removed(component_name: &str, clock: &str) {
-        let mut component = read_json_component(
+        let component = read_json_component(
             "samples/json/ClockReductionTest/UnusedClock",
             component_name,
         )
@@ -23,54 +23,47 @@ pub mod clock_removal_tests {
             .get_clock_index_by_name(clock)
             .unwrap();
 
-        component.remove_clock(clock_index);
-        component.fit_decls(clock_index);
-
-        let clock_reduced_compiled_component = CompiledComponent::compile(
+        let mut clock_reduced_compiled_component: TransitionSystemPtr = CompiledComponent::compile(
             component.clone(),
             component.declarations.clocks.len() + 1,
             &mut 0,
         )
         .unwrap();
+        clock_reduced_compiled_component
+            .remove_clocks(&vec![clock_index])
+            .unwrap();
 
         let decls = clock_reduced_compiled_component.get_decls();
 
         assert!(!decls[0].clocks.contains_key(clock));
     }
 
-    impl Component {
-        fn fit_decls(&mut self, index: edbm::util::constraints::ClockIndex) {
-            self.declarations
-                .clocks
-                .values_mut()
-                .filter(|val| **val > index)
-                .for_each(|val| *val -= 1);
-        }
-    }
-
     #[test]
     fn test_check_declarations_duplicated_clocks_are_removed() {
-        let mut component = read_json_component(
+        let component = read_json_component(
             "samples/json/ClockReductionTest/RedundantClocks",
             "Component1",
         )
         .unwrap();
 
-        let clock_1_index = component.declarations.get_clock_index_by_name("x").unwrap();
-        let mut duplicate_clocks_index = HashSet::new();
-        duplicate_clocks_index
-            .insert(*component.declarations.get_clock_index_by_name("y").unwrap());
-        duplicate_clocks_index
-            .insert(*component.declarations.get_clock_index_by_name("z").unwrap());
-
-        component.replace_clock(*clock_1_index, &duplicate_clocks_index);
-
-        let clock_reduced_compiled_component = CompiledComponent::compile(
+        let mut clock_reduced_compiled_component = CompiledComponent::compile(
             component.clone(),
             component.declarations.clocks.len() + 1,
             &mut 0,
         )
         .unwrap();
+        let decls_vector = clock_reduced_compiled_component.get_decls();
+        let decls = decls_vector.first().unwrap();
+
+        let clock_1_index = decls.get_clock_index_by_name("x").unwrap();
+
+        let mut replace_clocks = HashMap::new();
+        replace_clocks.insert(*decls.get_clock_index_by_name("y").unwrap(), *clock_1_index);
+        replace_clocks.insert(*decls.get_clock_index_by_name("z").unwrap(), *clock_1_index);
+
+        clock_reduced_compiled_component
+            .replace_clocks(&replace_clocks)
+            .expect("Couldn't replace clocks");
 
         let decls = clock_reduced_compiled_component.get_decls();
 
@@ -90,9 +83,11 @@ pub mod clock_removal_tests {
             dim, 4,
             "As of writing these tests, this component has 4 unused clocks"
         );
-
-        let recipe = SystemRecipe::Component(Box::from(comp));
-        clock_reduction::clock_reduce(&mut Box::from(recipe), None, &mut dim, None).unwrap();
+        let mut component_index = 0;
+        let mut recipe: TransitionSystemPtr = SystemRecipe::Component(Box::from(comp))
+            .compile_with_index(dim, &mut component_index)
+            .unwrap();
+        clock_reduce(&mut recipe, None, &mut dim, None).unwrap();
         assert_eq!(dim, 0, "After removing the clocks, the dim should be 0");
 
         assert!(
@@ -119,10 +114,15 @@ pub mod clock_removal_tests {
             8
         );
 
-        let l = SystemRecipe::Component(Box::from(lhs));
-        let r = SystemRecipe::Component(Box::from(rhs));
-        clock_reduction::clock_reduce(&mut Box::from(l), Some(&mut Box::from(r)), &mut dim, None)
+        let mut component_index = 0;
+        let mut left_ts: TransitionSystemPtr = SystemRecipe::Component(Box::from(lhs))
+            .compile_with_index(dim, &mut component_index)
             .unwrap();
+        let mut right_ts: TransitionSystemPtr = SystemRecipe::Component(Box::from(rhs))
+            .compile_with_index(dim, &mut component_index)
+            .unwrap();
+
+        clock_reduce(&mut left_ts, Some(&mut right_ts), &mut dim, None).unwrap();
         assert_eq!(dim, 0, "After removing the clocks, the dim should be 0");
 
         assert!(

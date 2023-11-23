@@ -8,21 +8,16 @@ pub fn remove_clock_from_federation(
 ) -> OwnedFederation {
     assert_ne!(Some(remove_clock), replacing_clock);
     let old_disjunction = federation.minimal_constraints();
-    let mut found_clock = false;
 
     let new_disjunction = Disjunction::new(
         old_disjunction
             .iter()
             // map to new constraints without clock_index and filter by empty conjunctions
             .filter_map(|conjunction| {
-                rebuild_conjunction(conjunction, remove_clock, replacing_clock, &mut found_clock)
+                rebuild_conjunction(conjunction, remove_clock, replacing_clock)
             })
             .collect(),
     );
-    if !found_clock {
-        // clock didn't exist in federation
-        return federation.owned_clone();
-    }
     Federation::from_disjunction(&new_disjunction, federation.dim() - 1)
 }
 
@@ -30,7 +25,6 @@ fn rebuild_conjunction(
     conjunction: &edbm::util::constraints::Conjunction,
     remove_clock: &ClockIndex,
     replacing_clock: Option<&ClockIndex>,
-    found_clock: &mut bool,
 ) -> Option<edbm::util::constraints::Conjunction> {
     let new_constraints: Vec<Constraint> = conjunction
         .iter()
@@ -39,9 +33,6 @@ fn rebuild_conjunction(
             remove_or_replace_constraint(constraint, remove_clock, replacing_clock)
         })
         .collect::<Vec<Constraint>>();
-    if new_constraints.len() != conjunction.constraints.len() {
-        *found_clock = true;
-    }
     if new_constraints.len() == 0 {
         // Remove conjunction constraints using only global clock
         return None;
@@ -57,18 +48,12 @@ fn create_constraint(
     inequality: Inequality,
     clock_index: ClockIndex,
 ) -> Constraint {
-    // Redraw constraints if their clocks are higher than the clock to be removed
-    if j > clock_index {
-        Constraint::new(
-            i - 1,
-            j - 1,
-            inequality.into(), //similar to the DBM
-        )
-    } else if i > clock_index {
-        Constraint::new(i - 1, j, inequality.into())
-    } else {
-        Constraint::new(i, j, inequality.into())
-    }
+    // Redraw constraints in case their clocks are higher than the clock that is to be removed
+    Constraint::new(
+        if i > clock_index { i - 1 } else { i },
+        if j > clock_index { j - 1 } else { j },
+        inequality.into(), //similar to the DBM
+    )
 }
 
 // Remove/Replace constraint if constraint contains clock_index
