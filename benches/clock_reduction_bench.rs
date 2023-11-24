@@ -15,23 +15,16 @@ fn bench_clock_reduced_refinement(c: &mut Criterion) {
     let mut group = c.benchmark_group("Clock Reduction");
     group.bench_function("Refinement check - No reduction", |b| {
         loader.get_settings_mut().disable_clock_reduction = true;
-        b.iter(|| normal_refinement(&mut loader));
+        b.iter(|| clock_reduction_helper(&mut loader));
     });
     group.bench_function("Refinement check - With reduction", |b| {
         loader.get_settings_mut().disable_clock_reduction = false;
-        b.iter(|| clock_reduced_refinement(&mut loader));
+        b.iter(|| clock_reduction_helper(&mut loader));
     });
     group.finish();
 }
 
-fn clock_reduced_refinement(loader: &mut Box<dyn ComponentLoader>) {
-    let query = parse_to_query(QUERY);
-    create_executable_query(query.get(0).unwrap(), loader.as_mut())
-        .unwrap()
-        .execute();
-}
-
-fn normal_refinement(loader: &mut Box<dyn ComponentLoader>) {
+fn clock_reduction_helper(loader: &mut Box<dyn ComponentLoader>) {
     let query = parse_to_query(QUERY);
     create_executable_query(query.get(0).unwrap(), loader.as_mut())
         .unwrap()
