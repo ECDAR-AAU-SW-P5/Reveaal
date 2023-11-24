@@ -1,6 +1,6 @@
-use std::time::Duration;
 use criterion::{criterion_group, criterion_main, Criterion};
 use reveaal::ComponentLoader;
+use std::time::Duration;
 
 mod bench_helper;
 use reveaal::extract_system_rep::create_executable_query;
@@ -26,11 +26,11 @@ fn bench_clock_reduction(c: &mut Criterion) {
     });
     group.bench_function("Reachability check - With reduction", |b| {
         loader.get_settings_mut().disable_clock_reduction = false;
-        b.iter(|| clock_reduction_helper(&mut loader,REACHABILITY_QUERY));
+        b.iter(|| clock_reduction_helper(&mut loader, REACHABILITY_QUERY));
     });
     group.bench_function("Consistency check - With reduction", |b| {
         loader.get_settings_mut().disable_clock_reduction = false;
-        b.iter(|| clock_reduction_helper(&mut loader,CONSISTENCY_QUERY));
+        b.iter(|| clock_reduction_helper(&mut loader, CONSISTENCY_QUERY));
     });
     group.bench_function("GetComponent check - With reduction", |b| {
         loader.get_settings_mut().disable_clock_reduction = false;
