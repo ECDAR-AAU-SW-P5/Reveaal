@@ -13,7 +13,10 @@ use std::io::Read;
 use std::path::Path;
 
 pub fn is_xml_project<P: AsRef<Path>>(project_path: P) -> bool {
-    project_path.as_ref().ends_with(".xml")
+    project_path
+        .as_ref()
+        .extension()
+        .is_some_and(|ext| ext == "xml")
 }
 
 ///Used to parse systems described in xml
