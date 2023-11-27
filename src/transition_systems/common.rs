@@ -94,11 +94,11 @@ impl<T: ComposedTransitionSystem> TransitionSystem for T {
     }
 
     /// Returns the declarations of both children.
-    fn get_decls(&self) -> Vec<&Declarations> {
+    fn get_all_system_decls(&self) -> Vec<&Declarations> {
         let (left, right) = self.get_children();
 
-        let mut comps = left.get_decls();
-        comps.extend(right.get_decls());
+        let mut comps = left.get_all_system_decls();
+        comps.extend(right.get_all_system_decls());
         comps
     }
 

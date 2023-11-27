@@ -1,9 +1,10 @@
-use std::collections::{HashMap, HashSet};
-use std::collections::hash_map::Entry;
-use std::hash::Hash;
-use edbm::util::constraints::ClockIndex;
 use crate::transition_systems::clock_reduction::clock_reduction_instruction::ClockReductionInstruction;
 use crate::transition_systems::compiled_update::CompiledUpdate;
+use crate::transition_systems::{LocationTree, TransitionSystemPtr};
+use edbm::util::constraints::ClockIndex;
+use std::collections::hash_map::Entry;
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::hash::Hash;
 
 #[derive(Debug)]
 pub struct ClockAnalysisGraph {
@@ -27,7 +28,20 @@ pub struct ClockAnalysisEdge {
     pub edge_type: String,
 }
 
+/// Main way to use ClockAnalysisGraph
+pub fn find_redundant_clocks(system: &TransitionSystemPtr) -> Vec<ClockReductionInstruction> {
+    ClockAnalysisGraph::from_system(system).find_clock_redundancies()
+}
+
 impl ClockAnalysisGraph {
+    /// Constructs a [ClockAnalysisGraph] where nodes represents locations and Edges represent transitions
+    pub fn from_system(system: &TransitionSystemPtr) -> ClockAnalysisGraph {
+        let mut graph: ClockAnalysisGraph = ClockAnalysisGraph::from_dim(system.get_dim());
+        graph.find_edges_and_nodes(system, system.get_initial_location().unwrap());
+
+        graph
+    }
+
     pub fn from_dim(dim: usize) -> ClockAnalysisGraph {
         ClockAnalysisGraph {
             nodes: HashMap::new(),
@@ -127,7 +141,7 @@ impl ClockAnalysisGraph {
             //So all groups in the locally equivalent clock groups will be partitioned
             //by the group they are in, in their globally equivalent group
             for (old_group_index, equivalent_clock_group) in
-            equivalent_clock_groups.iter_mut().enumerate()
+                equivalent_clock_groups.iter_mut().enumerate()
             {
                 for clock in equivalent_clock_group.iter() {
                     if let Some(group_id) = locally_equivalent_clock_groups.get(clock) {
@@ -135,7 +149,7 @@ impl ClockAnalysisGraph {
                             &mut new_groups,
                             group_offset + ((*group_id) as usize),
                         )
-                            .insert(*clock);
+                        .insert(*clock);
                     } else {
                         ClockAnalysisGraph::get_or_insert(&mut new_groups, old_group_index)
                             .insert(*clock);
@@ -158,6 +172,64 @@ impl ClockAnalysisGraph {
         match map.entry(key) {
             Entry::Occupied(o) => o.into_mut(),
             Entry::Vacant(v) => v.insert(V::default()),
+        }
+    }
+
+    ///Helper function to recursively traverse all transitions in a transitions system
+    ///in order to find all transitions and location in the transition system, and
+    ///saves these as [ClockAnalysisEdge]s and [ClockAnalysisNode]s in the [ClockAnalysisGraph]
+    fn find_edges_and_nodes(&mut self, system: &TransitionSystemPtr, init_location: LocationTree) {
+        let mut worklist = VecDeque::from([init_location]);
+        let actions = system.get_actions();
+        while let Some(location) = worklist.pop_front() {
+            //Constructs a node to represent this location and add it to the graph.
+            let mut node: ClockAnalysisNode = ClockAnalysisNode {
+                invariant_dependencies: HashSet::new(),
+                id: location.id.get_unique_string(),
+            };
+
+            //Finds clocks used in invariants in this location.
+            if let Some(invariant) = &location.invariant {
+                let conjunctions = invariant.minimal_constraints().conjunctions;
+                for conjunction in conjunctions {
+                    for constraint in conjunction.iter() {
+                        node.invariant_dependencies.insert(constraint.i);
+                        node.invariant_dependencies.insert(constraint.j);
+                    }
+                }
+            }
+            self.nodes.insert(node.id.clone(), node);
+
+            //Constructs an edge to represent each transition from this graph and add it to the graph.
+            for action in &actions {
+                for transition in system.next_transitions_if_available(&location, action) {
+                    let mut edge = ClockAnalysisEdge {
+                        from: location.id.get_unique_string(),
+                        to: transition.target_locations.id.get_unique_string(),
+                        guard_dependencies: HashSet::new(),
+                        updates: transition.updates,
+                        edge_type: action.to_string(),
+                    };
+
+                    //Finds clocks used in guards in this transition.
+                    let conjunctions = transition.guard_zone.minimal_constraints().conjunctions;
+                    for conjunction in &conjunctions {
+                        for constraint in conjunction.iter() {
+                            edge.guard_dependencies.insert(constraint.i);
+                            edge.guard_dependencies.insert(constraint.j);
+                        }
+                    }
+
+                    self.edges.push(edge);
+
+                    if !self
+                        .nodes
+                        .contains_key(&transition.target_locations.id.get_unique_string())
+                    {
+                        worklist.push_back(transition.target_locations);
+                    }
+                }
+            }
         }
     }
 }

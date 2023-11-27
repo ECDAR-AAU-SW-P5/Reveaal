@@ -72,7 +72,7 @@ pub fn get_locations_from_trees(
 
 pub fn get_clock_map(sysrep: &TransitionSystemPtr) -> HashMap<String, ClockIndex> {
     let mut clocks = HashMap::new();
-    let decls = sysrep.get_decls();
+    let decls = sysrep.get_all_system_decls();
 
     if decls.len() == 1 {
         return decls[0].clocks.clone();

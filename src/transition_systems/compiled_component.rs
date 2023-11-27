@@ -113,6 +113,11 @@ impl CompiledComponent {
     fn _comp_info(&self) -> &ComponentInfo {
         &self.comp_info
     }
+
+    /// Should only ever be borrowed
+    pub fn get_component_decls(&self) -> &Declarations {
+        &self.comp_info.declarations
+    }
 }
 
 impl TransitionSystem for CompiledComponent {
@@ -176,7 +181,7 @@ impl TransitionSystem for CompiledComponent {
         self.locations.get(id).cloned()
     }
 
-    fn get_decls(&self) -> Vec<&Declarations> {
+    fn get_all_system_decls(&self) -> Vec<&Declarations> {
         vec![&self.comp_info.declarations]
     }
 

@@ -360,9 +360,9 @@ impl TransitionSystem for Quotient {
         location_trees
     }
 
-    fn get_decls(&self) -> Vec<&Declarations> {
-        let mut comps = self.t.get_decls();
-        comps.extend(self.s.get_decls());
+    fn get_all_system_decls(&self) -> Vec<&Declarations> {
+        let mut comps = self.t.get_all_system_decls();
+        comps.extend(self.s.get_all_system_decls());
         comps.push(&self.decls);
         comps
     }

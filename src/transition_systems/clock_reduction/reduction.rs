@@ -1,12 +1,10 @@
 use crate::system::query_failures::SystemRecipeFailure;
-use crate::transition_systems::clock_reduction::clock_analysis_graph::{
-    ClockAnalysisEdge, ClockAnalysisGraph, ClockAnalysisNode,
-};
+use crate::transition_systems::clock_reduction::clock_analysis_graph::find_redundant_clocks;
 use crate::transition_systems::clock_reduction::clock_reduction_instruction::ClockReductionInstruction;
-use crate::transition_systems::{LocationTree, TransitionSystemPtr};
+use crate::transition_systems::TransitionSystemPtr;
 use edbm::util::constraints::ClockIndex;
 use log::debug;
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::HashMap;
 
 /// Function for a "safer" clock reduction that handles both the dimension of the DBM and the quotient index if needed be
 /// # Arguments
@@ -141,76 +139,491 @@ fn filter_redundant_clocks(
         get_unique_redundant_clocks(rhs, lhs, quotient_clock, |c| c > split_index),
     )
 }
-
-///Helper function to recursively traverse all transitions in a transitions system
-///in order to find all transitions and location in the transition system, and
-///saves these as [ClockAnalysisEdge]s and [ClockAnalysisNode]s in the [ClockAnalysisGraph]
-pub fn find_edges_and_nodes(
-    system: &TransitionSystemPtr,
-    init_location: LocationTree,
-    graph: &mut ClockAnalysisGraph,
-) {
-    let mut worklist = VecDeque::from([init_location]);
-    let actions = system.get_actions();
-    while let Some(location) = worklist.pop_front() {
-        //Constructs a node to represent this location and add it to the graph.
-        let mut node: ClockAnalysisNode = ClockAnalysisNode {
-            invariant_dependencies: HashSet::new(),
-            id: location.id.get_unique_string(),
+#[cfg(test)]
+mod tests {
+    mod transition_system {
+        use crate::data_reader::json_reader::read_json_component;
+        use crate::extract_system_rep::SystemRecipe;
+        use crate::tests::refinement::helper::json_run_query;
+        use crate::transition_systems::clock_reduction::clock_analysis_graph::{
+            find_redundant_clocks, ClockAnalysisGraph,
         };
+        use crate::transition_systems::clock_reduction::clock_reduction_instruction::ClockReductionInstruction;
+        use crate::transition_systems::clock_reduction::reduction::clock_reduce;
+        use crate::transition_systems::TransitionSystemPtr;
+        use crate::{JsonProjectLoader, DEFAULT_SETTINGS};
+        use edbm::util::constraints::ClockIndex;
+        use std::collections::{HashMap, HashSet};
+        use test_case::test_case;
 
-        //Finds clocks used in invariants in this location.
-        if let Some(invariant) = &location.invariant {
-            let conjunctions = invariant.minimal_constraints().conjunctions;
-            for conjunction in conjunctions {
-                for constraint in conjunction.iter() {
-                    node.invariant_dependencies.insert(constraint.i);
-                    node.invariant_dependencies.insert(constraint.j);
+        const AG_PATH: &str = "samples/json/AG";
+
+        #[test]
+        fn component_with_no_used_clock() {
+            // Arrange
+            let comp = read_json_component(AG_PATH, "A").unwrap();
+
+            let mut dim = comp.declarations.clocks.len();
+            assert_eq!(dim, 4, "Component A should have 4 unused clocks");
+
+            let mut component_index = 0;
+            let mut system: TransitionSystemPtr = SystemRecipe::Component(Box::from(comp))
+                .compile_with_index(dim, &mut component_index)
+                .unwrap();
+
+            // Act
+            clock_reduce(&mut system, None, &mut dim, None).unwrap();
+
+            // Assert
+            assert_eq!(dim, 0, "After removing the clocks, the dim should be 0");
+            assert!(
+                json_run_query(AG_PATH, "consistency: A").is_ok(),
+                "Component A should be consistent"
+            );
+        }
+
+        #[test]
+        fn component_with_no_used_clock_in_system() {
+            // Arrange
+            let (lhs, rhs, mut dim) = get_two_components(AG_PATH, "A", "A");
+            assert_eq!(dim, 8, "The components A & A has 8 unused clocks");
+
+            let mut component_index = 0;
+            let mut left_ts: TransitionSystemPtr =
+                lhs.compile_with_index(dim, &mut component_index).unwrap();
+            let mut right_ts: TransitionSystemPtr =
+                rhs.compile_with_index(dim, &mut component_index).unwrap();
+
+            // Act
+            clock_reduce(&mut left_ts, Some(&mut right_ts), &mut dim, None).unwrap();
+
+            // Assert
+            assert_eq!(dim, 0, "After removing the clocks, the dim should be 0");
+
+            assert!(
+                json_run_query(AG_PATH, "refinement: A <= A").is_ok(),
+                "A should refine itself"
+            );
+        }
+
+        #[test]
+        fn same_component_clock_detection() {
+            // Arrange
+            let (sr_component1, sr_component2, dim) = get_two_components(
+                "samples/json/ClockReductionTest/AdvancedClockReduction/Conjunction/SameComponent",
+                "Component1",
+                "Component1",
+            );
+            let system_recipe = SystemRecipe::Conjunction(sr_component1, sr_component2);
+            let transition_system = system_recipe.compile(dim).unwrap();
+
+            // Act
+            let clock_reduction_instruction = find_redundant_clocks(&transition_system);
+
+            // Assert
+            assert_eq!(
+                clock_reduction_instruction.len(),
+                1,
+                "Only one instruction needed"
+            );
+            let clock_name_to_index = create_clock_name_to_index(&transition_system);
+            assert!(
+                match &clock_reduction_instruction[0] {
+                    ClockReductionInstruction::RemoveClock { .. } => false,
+                    ClockReductionInstruction::ReplaceClocks {
+                        clock_index,
+                        clock_indices,
+                    } => {
+                        assert_eq!(
+                            clock_index,
+                            clock_name_to_index.get("component0:x").unwrap(),
+                            "Clocks get replaced by component1:x"
+                        );
+                        assert_eq!(clock_indices.len(), 1, "Only one clock should be replaced");
+                        assert!(
+                            clock_indices
+                                .contains(clock_name_to_index.get("component1:x").unwrap()),
+                            "Clock component2:x can be replaced by component1:x"
+                        );
+                        true
+                    }
+                },
+                "Clock reduction instruction is replace clocks"
+            );
+        }
+
+        #[test_case("samples/json/ClockReductionTest/AdvancedClockReduction/Conjunction/Example1"; "conjunction_example1")]
+        #[test_case("samples/json/ClockReductionTest/AdvancedClockReduction/Conjunction/ConjunctionCyclic"; "conjunction_cyclical_component")]
+        fn replace_clock(path: &str) {
+            // Arrange
+            let (sr_component1, sr_component2, dim) =
+                get_two_components(path, "Component1", "Component2");
+            let system_recipe = SystemRecipe::Conjunction(sr_component1, sr_component2);
+            let transition_system = system_recipe.compile(dim).unwrap();
+
+            // Act
+            let clock_reduction_instruction = find_redundant_clocks(&transition_system);
+
+            // Assert
+            assert_eq!(
+                clock_reduction_instruction.len(),
+                1,
+                "Only one instruction needed"
+            );
+            let clock_name_to_index = create_clock_name_to_index(&transition_system);
+            assert!(
+                match &clock_reduction_instruction[0] {
+                    ClockReductionInstruction::RemoveClock { .. } => false,
+                    ClockReductionInstruction::ReplaceClocks {
+                        clock_index,
+                        clock_indices,
+                    } => {
+                        assert_eq!(
+                            clock_index,
+                            clock_name_to_index.get("component0:x").unwrap(),
+                            "Clocks get replaced by x"
+                        );
+                        assert_eq!(clock_indices.len(), 1, "Only one clock should be replaced");
+                        assert!(
+                            clock_indices
+                                .contains(clock_name_to_index.get("component1:y").unwrap()),
+                            "Clock y can be replaced by x"
+                        );
+                        true
+                    }
+                },
+                "Clock reduction instruction is replace clocks"
+            );
+        }
+
+        #[test]
+        fn composition_cyclical_component() {
+            // Arrange
+            let (sr_component1, sr_component2, dimensions) = get_two_components("samples/json/ClockReductionTest/AdvancedClockReduction/Composition/CyclicOnlyOutput",
+                                                                                "Component1",
+                                                                                "Component2");
+            let transition_system = SystemRecipe::Composition(sr_component1, sr_component2)
+                .compile(dimensions)
+                .unwrap();
+
+            // Act
+            let clock_reduction_instruction = find_redundant_clocks(&transition_system);
+
+            // Assert
+            assert_eq!(
+                clock_reduction_instruction.len(),
+                0,
+                "No reduction is possible"
+            );
+        }
+
+        #[test]
+        fn remove_clock() {
+            // Arrange
+            let (sr_component1, sr_component2, mut dimensions) = get_two_components(
+                "samples/json/ClockReductionTest/AdvancedClockReduction/Conjunction/Example1",
+                "Component1",
+                "Component2",
+            );
+            let system_recipe = SystemRecipe::Conjunction(sr_component1, sr_component2);
+            let mut compiled = system_recipe.compile(dimensions).unwrap();
+
+            // Act
+            clock_reduce(&mut compiled, None, &mut dimensions, None).unwrap();
+
+            // Assert
+            for location in compiled.get_all_locations() {
+                assert!(location.invariant.is_none(), "Should contain no invariants")
+            }
+
+            let graph = ClockAnalysisGraph::from_system(&compiled);
+            for edge in &graph.edges {
+                match format!("{}->{}", edge.from, edge.to).as_str() {
+                    "(L0&&L4)->(L1&&L5)" => {
+                        assert_eq!(
+                            edge.guard_dependencies.len(),
+                            2,
+                            "edge (L0&&L4)->(L1&&L5) should only have 1 guard dependency"
+                        );
+                        assert!(edge.guard_dependencies.is_subset(&HashSet::from([0, 1])));
+                        assert_eq!(
+                            edge.updates.len(),
+                            0,
+                            "(L0&&L4)->(L1&&L5) should have no updates"
+                        );
+                    }
+                    "(L1&&L5)->(L2&&L6)" => {
+                        assert_eq!(
+                            edge.guard_dependencies.len(),
+                            0,
+                            "edge (L0&&L4)->(L1&&L5) should only have 2 guard dependency"
+                        );
+                        for update in &edge.updates {
+                            assert_eq!(
+                                update.clock_index, 1,
+                                "edge (L0&&L4)->(L1&&L5) should only update clock 1"
+                            );
+                        }
+                    }
+                    "(L2&&L6)->(L3&&L7)" => {
+                        assert_eq!(
+                            edge.guard_dependencies.len(),
+                            0,
+                            "edge (L0&&L4)->(L1&&L5) should only have 1 guard dependency"
+                        );
+                        assert_eq!(
+                            edge.updates.len(),
+                            0,
+                            "(L2&&L6)->(L3&&L7) should have no updates"
+                        );
+                    }
+                    e => panic!("unknown edge {}", e),
                 }
             }
         }
-        graph.nodes.insert(node.id.clone(), node);
 
-        //Constructs an edge to represent each transition from this graph and add it to the graph.
-        for action in &actions {
-            for transition in system.next_transitions_if_available(&location, action) {
-                let mut edge = ClockAnalysisEdge {
-                    from: location.id.get_unique_string(),
-                    to: transition.target_locations.id.get_unique_string(),
-                    guard_dependencies: HashSet::new(),
-                    updates: transition.updates,
-                    edge_type: action.to_string(),
-                };
+        fn create_clock_name_to_index(
+            transition_system: &TransitionSystemPtr,
+        ) -> HashMap<String, ClockIndex> {
+            let mut clock_name_to_index: HashMap<String, ClockIndex> = HashMap::new();
 
-                //Finds clocks used in guards in this transition.
-                let conjunctions = transition.guard_zone.minimal_constraints().conjunctions;
-                for conjunction in &conjunctions {
-                    for constraint in conjunction.iter() {
-                        edge.guard_dependencies.insert(constraint.i);
-                        edge.guard_dependencies.insert(constraint.j);
-                    }
-                }
-
-                graph.edges.push(edge);
-
-                if !graph
-                    .nodes
-                    .contains_key(&transition.target_locations.id.get_unique_string())
-                {
-                    worklist.push_back(transition.target_locations);
+            for (i, declaration) in transition_system.get_all_system_decls().iter().enumerate() {
+                for (clock_name, clock_index) in &declaration.clocks {
+                    clock_name_to_index
+                        .insert(format!("component{}:{}", i, clock_name), *clock_index);
                 }
             }
+            clock_name_to_index
+        }
+
+        fn get_two_components(
+            path: &str,
+            comp1: &str,
+            comp2: &str,
+        ) -> (Box<SystemRecipe>, Box<SystemRecipe>, ClockIndex) {
+            let project_loader = JsonProjectLoader::new_loader(path, DEFAULT_SETTINGS);
+
+            let mut component_loader = project_loader.to_comp_loader();
+
+            let mut component1 = component_loader.get_component(comp1).unwrap().clone();
+            let mut component2 = component_loader.get_component(comp2).unwrap().clone();
+
+            let mut next_clock_index: usize = 0;
+            component1.set_clock_indices(&mut next_clock_index);
+            component2.set_clock_indices(&mut next_clock_index);
+
+            let sr_component1 = Box::new(SystemRecipe::Component(Box::new(component1)));
+            let sr_component2 = Box::new(SystemRecipe::Component(Box::new(component2)));
+            (sr_component1, sr_component2, next_clock_index)
         }
     }
-}
-pub fn find_redundant_clocks(system: &TransitionSystemPtr) -> Vec<ClockReductionInstruction> {
-    get_analysis_graph(system).find_clock_redundancies()
-}
+    mod component_clock_removal {
+        use crate::data_reader::json_reader::read_json_component;
+        use crate::system::input_enabler;
+        use crate::transition_systems::clock_reduction::clock_analysis_graph::find_redundant_clocks;
+        use crate::transition_systems::clock_reduction::clock_reduction_instruction::ClockReductionInstruction;
+        use crate::transition_systems::{CompiledComponent, TransitionSystem, TransitionSystemPtr};
+        use edbm::util::constraints::ClockIndex;
+        use std::collections::{HashMap, HashSet};
+        use test_case::test_case;
 
-/// Constructs a [ClockAnalysisGraph] where nodes represents locations and Edges represent transitions
-pub fn get_analysis_graph(system: &TransitionSystemPtr) -> ClockAnalysisGraph {
-    let mut graph: ClockAnalysisGraph = ClockAnalysisGraph::from_dim(system.get_dim());
-    find_edges_and_nodes(system, system.get_initial_location().unwrap(), &mut graph);
+        const DIM: ClockIndex = 5; // TODO: Dim
 
-    graph
+        #[test]
+        fn find_duplicate_from_three_synced_clocks() {
+            // Arrange
+            let expected_clocks = ["x".to_string(), "y".to_string(), "z".to_string()];
+            let mut component = read_json_component(
+                "samples/json/ClockReductionTest/RedundantClocks",
+                "Component1",
+            )
+            .unwrap();
+
+            let inputs = component.get_input_actions();
+            input_enabler::make_input_enabled(&mut component, &inputs);
+
+            let compiled_component =
+                CompiledComponent::compile(component.clone(), DIM, &mut 0).unwrap();
+            let clock_index_x = component
+                .declarations
+                .get_clock_index_by_name(&expected_clocks[0])
+                .unwrap();
+            let clock_index_y = component
+                .declarations
+                .get_clock_index_by_name(&expected_clocks[1])
+                .unwrap();
+            let clock_index_z = component
+                .declarations
+                .get_clock_index_by_name(&expected_clocks[2])
+                .unwrap();
+
+            // Act
+            let instructions = find_redundant_clocks(&(compiled_component as TransitionSystemPtr));
+
+            // Assert
+            assert_duplicate_clock_in_clock_reduction_instruction_vec(
+                instructions,
+                *clock_index_x,
+                &HashSet::from([*clock_index_y, *clock_index_z]),
+            );
+        }
+
+        #[test]
+        fn remove_duplicate_from_three_synced_clocks() {
+            // Arrange
+            let component = read_json_component(
+                "samples/json/ClockReductionTest/RedundantClocks",
+                "Component1",
+            )
+            .unwrap();
+
+            let dim = component.declarations.clocks.len() + 1;
+            let mut clock_reduced_compiled_component =
+                CompiledComponent::compile(component, dim, &mut 0).unwrap();
+            let decls = clock_reduced_compiled_component.get_component_decls();
+
+            let target_clock = decls.get_clock_index_by_name("x").unwrap();
+            let replace_clocks = HashMap::from([
+                (*decls.get_clock_index_by_name("y").unwrap(), *target_clock),
+                (*decls.get_clock_index_by_name("z").unwrap(), *target_clock),
+            ]);
+
+            // Act
+            clock_reduced_compiled_component
+                .replace_clocks(&replace_clocks)
+                .expect("Couldn't replace clocks");
+
+            // Assert
+            let decls = clock_reduced_compiled_component.get_all_system_decls()[0];
+            assert_eq!(*decls.clocks.get("x").unwrap(), 1);
+            assert_eq!(*decls.clocks.get("y").unwrap(), 1);
+            assert_eq!(*decls.clocks.get("z").unwrap(), 1);
+        }
+
+        /// Loads the sample in `samples/json/ClockReductionTest/UnusedClockWithCycle` which contains
+        /// unused clocks. It then tests that these clocks are located correctly.
+        #[test_case("Component1", "x")]
+        #[test_case("Component2", "z")]
+        #[test_case("Component3", "j")]
+        fn cycles_find_unused_clocks(component_name: &str, unused_clock: &str) {
+            // Arrange
+            let component = read_json_component(
+                "samples/json/ClockReductionTest/UnusedClockWithCycle",
+                component_name,
+            )
+            .unwrap();
+
+            let dim = component.declarations.clocks.len() + 1;
+            let compiled_component: Box<CompiledComponent> =
+                CompiledComponent::compile(component, dim, &mut 0).unwrap();
+
+            let clock_index = *compiled_component
+                .get_component_decls()
+                .get_clock_index_by_name(unused_clock)
+                .unwrap();
+
+            // Act
+            let instructions = find_redundant_clocks(&(compiled_component as TransitionSystemPtr));
+
+            // Assert
+            find_clock_in_reduction_instruction(instructions, clock_index)
+        }
+
+        /// Loads the sample in `samples/json/ClockReductionTest/UnusedClock` which contains
+        /// unused clocks. It then tests that these clocks are located correctly.
+        #[test_case("Component1", "x")]
+        #[test_case("Component2", "i")]
+        #[test_case("Component3", "c")]
+        fn find_unused_clocks(component_name: &str, unused_clock: &str) {
+            // Arrange
+            let component = read_json_component(
+                "samples/json/ClockReductionTest/UnusedClock",
+                component_name,
+            )
+            .unwrap();
+
+            let dim = component.declarations.clocks.len() + 1;
+            let compiled_component: Box<CompiledComponent> =
+                CompiledComponent::compile(component, dim, &mut 0).unwrap();
+
+            let clock_index = *compiled_component
+                .get_component_decls()
+                .get_clock_index_by_name(unused_clock)
+                .unwrap();
+
+            // Act
+            let instructions = find_redundant_clocks(&(compiled_component as TransitionSystemPtr));
+
+            // Assert
+            find_clock_in_reduction_instruction(instructions, clock_index)
+        }
+
+        #[test_case("Component1", "x")]
+        #[test_case("Component2", "i")]
+        #[test_case("Component3", "c")]
+        fn remove_unused_clocks(component_name: &str, clock: &str) {
+            // Arrange
+            let component = read_json_component(
+                "samples/json/ClockReductionTest/UnusedClock",
+                component_name,
+            )
+            .unwrap();
+            let dim = component.declarations.clocks.len() + 1;
+            let mut compiled_component: Box<CompiledComponent> =
+                CompiledComponent::compile(component, dim, &mut 0).unwrap();
+
+            let clock_index = *compiled_component
+                .get_component_decls()
+                .get_clock_index_by_name(clock)
+                .unwrap();
+
+            // Act
+            compiled_component
+                .remove_clocks(&vec![clock_index])
+                .unwrap();
+
+            // Assert
+            assert!(!compiled_component.get_all_system_decls()[0]
+                .clocks
+                .contains_key(clock));
+        }
+
+        /// Assert that a [`vec<&ClockReductionInstruction>`] contains an instruction that `clock` is a
+        /// duplicate of the clocks in `clocks`.
+        fn assert_duplicate_clock_in_clock_reduction_instruction_vec(
+            redundant_clocks: Vec<ClockReductionInstruction>,
+            clock: ClockIndex,
+            clocks: &HashSet<ClockIndex>,
+        ) {
+            assert!(redundant_clocks
+                .iter()
+                .any(|instruction| match instruction {
+                    ClockReductionInstruction::RemoveClock { .. } => {
+                        false
+                    }
+                    ClockReductionInstruction::ReplaceClocks {
+                        clock_index,
+                        clock_indices,
+                    } => {
+                        *clock_index == clock && clock_indices == clocks
+                    }
+                }));
+        }
+
+        /// Assert that a [`vec<&ClockReductionInstruction>`] contains an instruction that `clock` should
+        /// be removed.
+        fn find_clock_in_reduction_instruction(
+            redundant_clocks: Vec<ClockReductionInstruction>,
+            clock: ClockIndex,
+        ) {
+            assert!(redundant_clocks
+                .iter()
+                .any(|instruction| match instruction {
+                    ClockReductionInstruction::RemoveClock { clock_index } => {
+                        *clock_index == clock
+                    }
+                    _ => false,
+                }));
+        }
+    }
 }

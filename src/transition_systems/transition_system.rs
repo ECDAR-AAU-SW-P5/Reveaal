@@ -119,7 +119,7 @@ pub trait TransitionSystem: DynClone {
             .cloned()
     }
 
-    fn get_decls(&self) -> Vec<&Declarations>;
+    fn get_all_system_decls(&self) -> Vec<&Declarations>;
 
     fn precheck_sys_rep(&self) -> ConsistencyResult {
         self.check_determinism()?;

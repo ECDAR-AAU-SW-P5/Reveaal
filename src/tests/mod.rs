@@ -1,6 +1,5 @@
 use crate::protobuf_server::services::query_request::Settings;
 
-pub mod clock_reduction;
 pub mod edge_ids;
 pub mod failure_message;
 pub mod grpc;
