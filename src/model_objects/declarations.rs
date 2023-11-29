@@ -44,7 +44,7 @@ impl Declarations {
             .map(|(k, _)| k)
     }
 
-    pub fn remove_clocks(&mut self, clocks_to_be_removed: &Vec<ClockIndex>) {
+    pub fn remove_clocks(&mut self, clocks_to_be_removed: &[ClockIndex]) {
         let mut clock_count = *self.clocks.values().next().unwrap_or(&(1usize));
         let mut new_clocks: HashMap<String, ClockIndex> = HashMap::new();
 

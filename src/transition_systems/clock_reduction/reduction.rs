@@ -92,7 +92,7 @@ fn extract_remove_and_replace_from_instruction(
             }
         }
     }
-    return (remove_clocks, replace_clocks);
+    (remove_clocks, replace_clocks)
 }
 
 fn filter_redundant_clocks(
@@ -586,9 +586,7 @@ mod tests {
                 .unwrap();
 
             // Act
-            compiled_component
-                .remove_clocks(&vec![clock_index])
-                .unwrap();
+            compiled_component.remove_clocks(&[clock_index]).unwrap();
 
             // Assert
             assert!(!compiled_component.get_all_system_decls()[0]

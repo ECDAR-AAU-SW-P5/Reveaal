@@ -219,7 +219,7 @@ impl TransitionSystem for CompiledComponent {
         vec![&self.comp_info.name]
     }
 
-    fn remove_clocks(&mut self, clocks: &Vec<ClockIndex>) -> Result<(), String> {
+    fn remove_clocks(&mut self, clocks: &[ClockIndex]) -> Result<(), String> {
         // Remove clock from Declarations
         self.comp_info.declarations.remove_clocks(clocks);
         // Remove clock from Locations
@@ -230,7 +230,7 @@ impl TransitionSystem for CompiledComponent {
                 match &loc.invariant {
                     None => {}
                     Some(inv) => {
-                        loc.invariant = Some(remove_clock_from_federation(&inv, clock, None));
+                        loc.invariant = Some(remove_clock_from_federation(inv, clock, None));
                     }
                 }
             }
@@ -268,7 +268,7 @@ impl TransitionSystem for CompiledComponent {
                     None => {}
                     Some(inv) => {
                         loc.invariant = Some(remove_clock_from_federation(
-                            &inv,
+                            inv,
                             clock_to_be_replaced,
                             Some(new_clock),
                         ));

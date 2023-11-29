@@ -391,7 +391,7 @@ impl TransitionSystem for Quotient {
         CompositionType::Quotient
     }
 
-    fn remove_clocks(&mut self, clocks: &Vec<ClockIndex>) -> Result<(), String> {
+    fn remove_clocks(&mut self, clocks: &[ClockIndex]) -> Result<(), String> {
         let clocks_less_or_equal =
             clocks.partition_point(|clock| clock <= &self.quotient_clock_index);
         if clocks[clocks_less_or_equal] == self.quotient_clock_index {

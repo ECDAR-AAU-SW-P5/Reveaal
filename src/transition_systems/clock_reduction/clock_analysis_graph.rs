@@ -57,7 +57,7 @@ impl ClockAnalysisGraph {
 
         //Then we instruct the caller to remove the unused clocks, we start at 1 since the 0 clock is not a real clock
         let unused_clocks = (1..self.dim)
-            .filter(|clock| !used_clocks.contains(&clock))
+            .filter(|clock| !used_clocks.contains(clock))
             .collect::<HashSet<ClockIndex>>();
 
         let mut reduction_vector: Vec<ClockReductionInstruction> = Vec::new();

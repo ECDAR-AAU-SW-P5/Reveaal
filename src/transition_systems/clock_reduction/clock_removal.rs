@@ -12,7 +12,7 @@ pub fn remove_clock_from_federation(
     if replacing_clock.is_some_and(|replacing_clock_value| replacing_clock_value > remove_clock) {
         _replacing_clock = Some(&(replacing_clock.unwrap() - 1));
     } else {
-        _replacing_clock = replacing_clock.clone();
+        _replacing_clock = replacing_clock;
     }
 
     let old_disjunction = federation.minimal_constraints();
@@ -79,7 +79,7 @@ fn rebuild_conjunction(
             }
         }
     }
-    if new_constraints.len() == 0 {
+    if new_constraints.is_empty() {
         // Remove conjunction constraints using only global clock
         return None;
     }
@@ -142,12 +142,12 @@ fn remove_or_replace_constraint(
         }
     }
     // If neither side contains the clock rebuild the constraint
-    return Some(create_constraint(
+    Some(create_constraint(
         constraint.i,
         constraint.j,
         constraint.ineq(),
         *remove_clock,
-    ));
+    ))
 }
 
 #[cfg(test)]
@@ -182,14 +182,16 @@ mod a {
         // the last 2 values
         for constraint in &conjunction.constraints {
             match constraint.i {
-                1 => match constraint.j {
-                    2 => assert_eq!(constraint.ineq().bound(), 3),
-                    _ => (),
-                },
-                2 => match constraint.j {
-                    1 => assert_eq!(constraint.ineq().bound(), 1),
-                    _ => (),
-                },
+                1 => {
+                    if constraint.j == 2 {
+                        assert_eq!(constraint.ineq().bound(), 3)
+                    }
+                }
+                2 => {
+                    if constraint.j == 1 {
+                        assert_eq!(constraint.ineq().bound(), 1)
+                    }
+                }
                 _ => (),
             }
         }
@@ -222,19 +224,13 @@ mod a {
         for constraint in &conjunction.constraints {
             match constraint.i {
                 0 => {
-                    match constraint.j {
-                        1 => {
-                            assert_eq!(constraint.ineq().bound(), -1); // top right
-                        }
-                        _ => {}
+                    if constraint.j == 1 {
+                        assert_eq!(constraint.ineq().bound(), -1); // top right
                     }
                 }
                 1 => {
-                    match constraint.j {
-                        0 => {
-                            assert_eq!(constraint.ineq().bound(), 5); //bottom left
-                        }
-                        _ => {}
+                    if constraint.j == 0 {
+                        assert_eq!(constraint.ineq().bound(), 5); //bottom left
                     }
                 }
                 _ => {}
@@ -274,21 +270,15 @@ mod a {
         for constraint in &conjunction.constraints {
             match constraint.i {
                 0 => {
-                    match constraint.j {
-                        1 => {
-                            //-2 vs -1
-                            assert_eq!(constraint.ineq().bound(), -1);
-                        }
-                        _ => {}
+                    if constraint.j == 1 {
+                        //-2 vs -1
+                        assert_eq!(constraint.ineq().bound(), -1);
                     }
                 }
                 1 => {
-                    match constraint.j {
-                        0 => {
-                            //6 vs 5
-                            assert_eq!(constraint.ineq().bound(), 6);
-                        }
-                        _ => {}
+                    if constraint.j == 0 {
+                        //6 vs 5
+                        assert_eq!(constraint.ineq().bound(), 6);
                     }
                 }
                 _ => {}
