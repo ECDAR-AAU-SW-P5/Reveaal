@@ -7,6 +7,7 @@ pub fn remove_clock_from_federation(
     replacing_clock: Option<&ClockIndex>,
 ) -> OwnedFederation {
     assert_ne!(Some(remove_clock), replacing_clock);
+    //todo given one instruction removes clock 1, then the next instruction for removing clock 2 is actually to remove clock 1
 
     let mut _replacing_clock: Option<&ClockIndex>;
     if replacing_clock.is_some_and(|replacing_clock_value| replacing_clock_value > remove_clock) {

@@ -40,11 +40,18 @@ pub fn clock_reduce(
 
     let (l_remove_clocks, l_replace_clocks) = extract_remove_and_replace_from_instruction(l_clocks);
     let (r_remove_clocks, r_replace_clocks) = extract_remove_and_replace_from_instruction(r_clocks);
-
-    lhs.remove_clocks(&l_remove_clocks).unwrap();
-    rhs.remove_clocks(&r_remove_clocks).unwrap();
-    lhs.replace_clocks(&l_replace_clocks).unwrap();
-    rhs.replace_clocks(&r_replace_clocks).unwrap();
+    if !l_remove_clocks.is_empty() {
+        lhs.remove_clocks(&l_remove_clocks).unwrap();
+    }
+    if !l_replace_clocks.is_empty() {
+        lhs.replace_clocks(&l_replace_clocks).unwrap();
+    }
+    if !r_remove_clocks.is_empty() {
+        rhs.remove_clocks(&r_remove_clocks).unwrap();
+    }
+    if !r_replace_clocks.is_empty() {
+        rhs.replace_clocks(&r_replace_clocks).unwrap();
+    }
 
     Ok(())
 }
@@ -68,8 +75,12 @@ fn clock_reduce_single(
     *dim -= clocks.len();
     debug!("New dimension: {dim}");
     let (remove_clocks, replace_clocks) = extract_remove_and_replace_from_instruction(clocks);
-    sys.remove_clocks(&remove_clocks).unwrap();
-    sys.replace_clocks(&replace_clocks).unwrap();
+    if !remove_clocks.is_empty() {
+        sys.remove_clocks(&remove_clocks).unwrap();
+    }
+    if !replace_clocks.is_empty() {
+        sys.replace_clocks(&replace_clocks).unwrap();
+    }
     Ok(())
 }
 
