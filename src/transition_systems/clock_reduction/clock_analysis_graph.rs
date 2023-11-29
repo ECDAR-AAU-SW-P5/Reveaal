@@ -5,6 +5,7 @@ use edbm::util::constraints::ClockIndex;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::Hash;
+use ClockReductionInstruction::{RemoveClock, ReplaceClock};
 
 #[derive(Debug)]
 pub struct ClockAnalysisGraph {
@@ -59,9 +60,9 @@ impl ClockAnalysisGraph {
             .filter(|clock| !used_clocks.contains(&clock))
             .collect::<HashSet<ClockIndex>>();
 
-        let mut rv: Vec<ClockReductionInstruction> = Vec::new();
+        let mut reduction_vector: Vec<ClockReductionInstruction> = Vec::new();
         for unused_clock in &unused_clocks {
-            rv.push(ClockReductionInstruction::RemoveClock {
+            reduction_vector.push(RemoveClock {
                 clock_index: *unused_clock,
             });
         }
@@ -71,13 +72,17 @@ impl ClockAnalysisGraph {
         for equivalent_clock_group in &mut equivalent_clock_groups {
             let lowest_clock = *equivalent_clock_group.iter().min().unwrap();
             equivalent_clock_group.remove(&lowest_clock);
-            rv.push(ClockReductionInstruction::ReplaceClocks {
-                clock_index: lowest_clock,
-                clock_indices: equivalent_clock_group.clone(),
-            });
+            let mut reductions_for_clock_group = equivalent_clock_group
+                .iter()
+                .map(|clock| ReplaceClock {
+                    clock_index: *clock,
+                    replacing_clock: lowest_clock,
+                })
+                .collect();
+            reduction_vector.append(&mut reductions_for_clock_group);
         }
 
-        rv
+        reduction_vector
     }
 
     fn find_used_clocks(&self) -> HashSet<ClockIndex> {

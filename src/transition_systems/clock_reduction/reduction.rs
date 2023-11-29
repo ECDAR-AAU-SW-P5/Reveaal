@@ -35,10 +35,7 @@ pub fn clock_reduce(
     );
 
     debug!("Clocks to be reduced: {l_clocks:?} + {r_clocks:?}");
-    *dim -= l_clocks
-        .iter()
-        .chain(r_clocks.iter())
-        .fold(0, |acc, c| acc + c.clocks_removed_count());
+    *dim -= l_clocks.iter().chain(r_clocks.iter()).count();
     debug!("New dimension: {dim}");
 
     let (l_remove_clocks, l_replace_clocks) = extract_remove_and_replace_from_instruction(l_clocks);
@@ -68,9 +65,7 @@ fn clock_reduce_single(
     let mut clocks = find_redundant_clocks(sys);
     clocks.retain(|ins| ins.get_clock_index() != quotient_clock.unwrap_or_default());
     debug!("Clocks to be reduced: {clocks:?}");
-    *dim -= clocks
-        .iter()
-        .fold(0, |acc, c| acc + c.clocks_removed_count());
+    *dim -= clocks.len();
     debug!("New dimension: {dim}");
     let (remove_clocks, replace_clocks) = extract_remove_and_replace_from_instruction(clocks);
     sys.remove_clocks(&remove_clocks).unwrap();
@@ -78,7 +73,7 @@ fn clock_reduce_single(
     Ok(())
 }
 
-//todo fix clockreductioninstruction
+//todo consider removing clockreductioninstruction
 fn extract_remove_and_replace_from_instruction(
     instructions: Vec<ClockReductionInstruction>,
 ) -> (Vec<ClockIndex>, HashMap<ClockIndex, ClockIndex>) {
@@ -87,15 +82,13 @@ fn extract_remove_and_replace_from_instruction(
     for instruction in instructions {
         match instruction {
             ClockReductionInstruction::RemoveClock { clock_index } => {
-                remove_clocks.push(clock_index)
+                remove_clocks.push(clock_index);
             }
-            ClockReductionInstruction::ReplaceClocks {
+            ClockReductionInstruction::ReplaceClock {
                 clock_index,
-                clock_indices,
+                replacing_clock,
             } => {
-                for remove_clock in clock_indices {
-                    replace_clocks.insert(remove_clock, clock_index);
-                }
+                replace_clocks.insert(clock_index, replacing_clock);
             }
         }
     }
@@ -155,6 +148,7 @@ mod tests {
         use edbm::util::constraints::ClockIndex;
         use std::collections::{HashMap, HashSet};
         use test_case::test_case;
+        use ClockReductionInstruction::{RemoveClock, ReplaceClock};
 
         const AG_PATH: &str = "samples/json/AG";
 
@@ -166,6 +160,9 @@ mod tests {
             let mut dim = comp.declarations.clocks.len();
             assert_eq!(dim, 4, "Component A should have 4 unused clocks");
 
+            // Adding some extra big dimension to test that it is resized no matter what
+            dim = 15;
+
             let mut component_index = 0;
             let mut system: TransitionSystemPtr = SystemRecipe::Component(Box::from(comp))
                 .compile_with_index(dim, &mut component_index)
@@ -176,6 +173,7 @@ mod tests {
 
             // Assert
             assert_eq!(dim, 0, "After removing the clocks, the dim should be 0");
+            assert_eq!(system.get_dim(), 1, "global clock still exists");
             assert!(
                 json_run_query(AG_PATH, "consistency: A").is_ok(),
                 "Component A should be consistent"
@@ -229,21 +227,20 @@ mod tests {
             let clock_name_to_index = create_clock_name_to_index(&transition_system);
             assert!(
                 match &clock_reduction_instruction[0] {
-                    ClockReductionInstruction::RemoveClock { .. } => false,
-                    ClockReductionInstruction::ReplaceClocks {
+                    RemoveClock { .. } => false,
+                    ReplaceClock {
                         clock_index,
-                        clock_indices,
+                        replacing_clock,
                     } => {
                         assert_eq!(
                             clock_index,
+                            clock_name_to_index.get("component1:x").unwrap(),
+                            "Clock component2:x can be replaced by component1:x"
+                        );
+                        assert_eq!(
+                            replacing_clock,
                             clock_name_to_index.get("component0:x").unwrap(),
                             "Clocks get replaced by component1:x"
-                        );
-                        assert_eq!(clock_indices.len(), 1, "Only one clock should be replaced");
-                        assert!(
-                            clock_indices
-                                .contains(clock_name_to_index.get("component1:x").unwrap()),
-                            "Clock component2:x can be replaced by component1:x"
                         );
                         true
                     }
@@ -273,21 +270,20 @@ mod tests {
             let clock_name_to_index = create_clock_name_to_index(&transition_system);
             assert!(
                 match &clock_reduction_instruction[0] {
-                    ClockReductionInstruction::RemoveClock { .. } => false,
-                    ClockReductionInstruction::ReplaceClocks {
+                    RemoveClock { .. } => false,
+                    ReplaceClock {
                         clock_index,
-                        clock_indices,
+                        replacing_clock,
                     } => {
                         assert_eq!(
                             clock_index,
+                            clock_name_to_index.get("component1:y").unwrap(),
+                            "Clock y can be replaced by x"
+                        );
+                        assert_eq!(
+                            replacing_clock,
                             clock_name_to_index.get("component0:x").unwrap(),
                             "Clocks get replaced by x"
-                        );
-                        assert_eq!(clock_indices.len(), 1, "Only one clock should be replaced");
-                        assert!(
-                            clock_indices
-                                .contains(clock_name_to_index.get("component1:y").unwrap()),
-                            "Clock y can be replaced by x"
                         );
                         true
                     }
@@ -424,10 +420,8 @@ mod tests {
         use crate::transition_systems::clock_reduction::clock_reduction_instruction::ClockReductionInstruction;
         use crate::transition_systems::{CompiledComponent, TransitionSystem, TransitionSystemPtr};
         use edbm::util::constraints::ClockIndex;
-        use std::collections::{HashMap, HashSet};
+        use std::collections::HashMap;
         use test_case::test_case;
-
-        const DIM: ClockIndex = 5; // TODO: Dim
 
         #[test]
         fn find_duplicate_from_three_synced_clocks() {
@@ -442,8 +436,10 @@ mod tests {
             let inputs = component.get_input_actions();
             input_enabler::make_input_enabled(&mut component, &inputs);
 
+            let dim = component.declarations.clocks.len() + 1;
+
             let compiled_component =
-                CompiledComponent::compile(component.clone(), DIM, &mut 0).unwrap();
+                CompiledComponent::compile(component.clone(), dim, &mut 0).unwrap();
             let clock_index_x = component
                 .declarations
                 .get_clock_index_by_name(&expected_clocks[0])
@@ -461,11 +457,23 @@ mod tests {
             let instructions = find_redundant_clocks(&(compiled_component as TransitionSystemPtr));
 
             // Assert
-            assert_duplicate_clock_in_clock_reduction_instruction_vec(
-                instructions,
-                *clock_index_x,
-                &HashSet::from([*clock_index_y, *clock_index_z]),
-            );
+            for instruction in instructions {
+                assert!(
+                    match instruction {
+                        ClockReductionInstruction::RemoveClock { .. } => {
+                            false
+                        }
+                        ClockReductionInstruction::ReplaceClock {
+                            clock_index,
+                            replacing_clock,
+                        } => {
+                            &replacing_clock == clock_index_x && &clock_index == clock_index_y
+                                || &clock_index == clock_index_z
+                        }
+                    },
+                    "failed to assert either replace_clock 3->1 or 2->1"
+                )
+            }
         }
 
         #[test]
@@ -586,28 +594,6 @@ mod tests {
             assert!(!compiled_component.get_all_system_decls()[0]
                 .clocks
                 .contains_key(clock));
-        }
-
-        /// Assert that a [`vec<&ClockReductionInstruction>`] contains an instruction that `clock` is a
-        /// duplicate of the clocks in `clocks`.
-        fn assert_duplicate_clock_in_clock_reduction_instruction_vec(
-            redundant_clocks: Vec<ClockReductionInstruction>,
-            clock: ClockIndex,
-            clocks: &HashSet<ClockIndex>,
-        ) {
-            assert!(redundant_clocks
-                .iter()
-                .any(|instruction| match instruction {
-                    ClockReductionInstruction::RemoveClock { .. } => {
-                        false
-                    }
-                    ClockReductionInstruction::ReplaceClocks {
-                        clock_index,
-                        clock_indices,
-                    } => {
-                        *clock_index == clock && clock_indices == clocks
-                    }
-                }));
         }
 
         /// Assert that a [`vec<&ClockReductionInstruction>`] contains an instruction that `clock` should
