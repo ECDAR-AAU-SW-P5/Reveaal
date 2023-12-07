@@ -10,7 +10,7 @@ use edbm::util::bounds::Bounds;
 use edbm::util::constraints::ClockIndex;
 use edbm::zones::OwnedFederation;
 use log::warn;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 /// Methods which are dependant on whether the ComposedTransitionSystem is a
 /// [crate::transition_systems::conjunction] or [crate::transition_systems::Composition]
@@ -134,7 +134,7 @@ impl<T: ComposedTransitionSystem> TransitionSystem for T {
         self.get_composition_type()
     }
 
-    fn remove_clocks(&mut self, clocks: &[ClockIndex]) -> Result<(), String> {
+    fn remove_clocks(&mut self, clocks: &HashSet<ClockIndex>) -> Result<(), String> {
         let (left, right) = self.get_children_mut();
         left.remove_clocks(clocks)?; // return if not ok
         right.remove_clocks(clocks)?;
@@ -143,10 +143,10 @@ impl<T: ComposedTransitionSystem> TransitionSystem for T {
         Ok(())
     }
 
-    fn replace_clocks(&mut self, clocks: &HashMap<ClockIndex, ClockIndex>) -> Result<(), String> {
+    fn combine_clocks(&mut self, clocks: &Vec<HashSet<ClockIndex>>) -> Result<(), String> {
         let (left, right) = self.get_children_mut();
-        left.replace_clocks(clocks)?; // return if not ok
-        right.replace_clocks(clocks)?;
+        left.combine_clocks(clocks)?; // return if not ok
+        right.combine_clocks(clocks)?;
         let new_dim = right.get_dim() + left.get_dim();
         self.set_dim(new_dim);
         Ok(())

@@ -1,6 +1,6 @@
 use edbm::util::constraints::ClockIndex;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// The declaration struct is used to hold the indices for each clock, and is meant to be the owner of int variables once implemented
 #[derive(Debug, Deserialize, Clone, PartialEq, Eq, Serialize)]
@@ -60,8 +60,8 @@ impl Declarations {
         self.clocks = new_clocks;
     }
 
-    pub fn replace_clocks(&mut self, clock_replacements: &HashMap<ClockIndex, ClockIndex>) {
-        for (clock_to_be_replaced, new_clock) in clock_replacements {
+    pub fn combine_clocks(&mut self, combine_clocks: &Vec<HashSet<ClockIndex>>) {
+        for (clock_to_be_replaced, new_clock) in combine_clocks {
             for (_, clock) in self.clocks.iter_mut() {
                 if clock == clock_to_be_replaced {
                     *clock = *new_clock;

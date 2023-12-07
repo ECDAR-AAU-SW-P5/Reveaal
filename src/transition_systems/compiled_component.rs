@@ -219,7 +219,7 @@ impl TransitionSystem for CompiledComponent {
         vec![&self.comp_info.name]
     }
 
-    fn remove_clocks(&mut self, clocks: &[ClockIndex]) -> Result<(), String> {
+    fn remove_clocks(&mut self, clocks: &HashSet<ClockIndex>) -> Result<(), String> {
         // Remove clock from Declarations
         self.comp_info.declarations.remove_clocks(clocks);
         // Remove clock from Locations
@@ -256,9 +256,9 @@ impl TransitionSystem for CompiledComponent {
         Ok(())
     }
 
-    fn replace_clocks(&mut self, clocks: &HashMap<ClockIndex, ClockIndex>) -> Result<(), String> {
+    fn combine_clocks(&mut self, clocks: &Vec<HashSet<ClockIndex>>) -> Result<(), String> {
         // Replace clock from Declarations
-        self.comp_info.declarations.replace_clocks(clocks);
+        self.comp_info.declarations.combine_clocks(clocks);
         // Replace clock from Locations
         for loc in self.locations.values_mut() {
             // Replace from Invariant

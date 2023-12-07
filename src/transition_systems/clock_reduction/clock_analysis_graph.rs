@@ -1,11 +1,9 @@
-use crate::transition_systems::clock_reduction::clock_reduction_instruction::ClockReductionInstruction;
 use crate::transition_systems::compiled_update::CompiledUpdate;
 use crate::transition_systems::{LocationTree, TransitionSystemPtr};
 use edbm::util::constraints::ClockIndex;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::Hash;
-use ClockReductionInstruction::{RemoveClock, ReplaceClock};
 
 #[derive(Debug)]
 pub struct ClockAnalysisGraph {
@@ -30,7 +28,9 @@ pub struct ClockAnalysisEdge {
 }
 
 /// Main way to use ClockAnalysisGraph
-pub fn find_redundant_clocks(system: &TransitionSystemPtr) -> Vec<ClockReductionInstruction> {
+pub fn find_redundant_clocks(
+    system: &TransitionSystemPtr,
+) -> (HashSet<ClockIndex>, Vec<HashSet<ClockIndex>>) {
     ClockAnalysisGraph::from_system(system).find_clock_redundancies()
 }
 
@@ -51,7 +51,7 @@ impl ClockAnalysisGraph {
         }
     }
 
-    pub fn find_clock_redundancies(self) -> Vec<ClockReductionInstruction> {
+    pub fn find_clock_redundancies(self) -> (HashSet<ClockIndex>, Vec<HashSet<ClockIndex>>) {
         //First we find the used clocks
         let used_clocks = self.find_used_clocks();
 
@@ -60,29 +60,9 @@ impl ClockAnalysisGraph {
             .filter(|clock| !used_clocks.contains(clock))
             .collect::<HashSet<ClockIndex>>();
 
-        let mut reduction_vector: Vec<ClockReductionInstruction> = Vec::new();
-        for unused_clock in &unused_clocks {
-            reduction_vector.push(RemoveClock {
-                clock_index: *unused_clock,
-            });
-        }
+        let equivalent_clock_groups = self.find_equivalent_clock_groups(&used_clocks);
 
-        let mut equivalent_clock_groups = self.find_equivalent_clock_groups(&used_clocks);
-
-        for equivalent_clock_group in &mut equivalent_clock_groups {
-            let lowest_clock = *equivalent_clock_group.iter().min().unwrap();
-            equivalent_clock_group.remove(&lowest_clock);
-            let mut reductions_for_clock_group = equivalent_clock_group
-                .iter()
-                .map(|clock| ReplaceClock {
-                    clock_index: *clock,
-                    replacing_clock: lowest_clock,
-                })
-                .collect();
-            reduction_vector.append(&mut reductions_for_clock_group);
-        }
-
-        reduction_vector
+        (unused_clocks, equivalent_clock_groups)
     }
 
     fn find_used_clocks(&self) -> HashSet<ClockIndex> {

@@ -12,7 +12,6 @@ use crate::{
 use dyn_clone::{clone_trait_object, DynClone};
 use edbm::util::{bounds::Bounds, constraints::ClockIndex};
 use std::collections::hash_set::HashSet;
-use std::collections::HashMap;
 
 pub type TransitionSystemPtr = Box<dyn TransitionSystem>;
 pub type Action = String;
@@ -170,7 +169,7 @@ pub trait TransitionSystem: DynClone {
     }
 
     /// Assumes clocks are in order such as [1, 3, 4, 5]
-    fn remove_clocks(&mut self, clocks: &[ClockIndex]) -> Result<(), String>;
+    fn remove_clocks(&mut self, clocks: &HashSet<ClockIndex>) -> Result<(), String>;
 
     /// Assumes that no clock is remapped to itself and that a clock is replaced with an existing clock such that they become equal
     ///
@@ -181,7 +180,7 @@ pub trait TransitionSystem: DynClone {
     /// - 1, 1, 1, 4, 4, 5, 7, 9, 9, 11, 11    (sorted)
     /// - 1, 1, 1, 2, 2, 3, 4, 5, 5, 6, 6      (redrawn)
     /// - 1, 2, 3, 4, 5, 6                     (no duplicates)
-    fn replace_clocks(&mut self, clocks: &HashMap<ClockIndex, ClockIndex>) -> Result<(), String>;
+    fn combine_clocks(&mut self, clocks: &Vec<HashSet<ClockIndex>>) -> Result<(), String>;
 
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String>;
 }

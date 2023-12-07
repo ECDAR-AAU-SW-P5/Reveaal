@@ -1,5 +1,4 @@
 mod clock_analysis_graph;
-pub mod clock_reduction_instruction;
 pub mod clock_removal;
 /// Module for removing clocks considered unnecessary without modifying the system.
 ///
