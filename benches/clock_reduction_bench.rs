@@ -4,32 +4,67 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use criterion::{criterion_group, criterion_main, Criterion, BenchmarkGroup};
 use reveaal::ComponentLoader;
 
-pub struct Trallocator<A: GlobalAlloc>(pub A, AtomicU64);
+pub struct Trallocator<A: GlobalAlloc>{
+    alloc: A,
+    allocated: AtomicU64,
+    freed: AtomicU64,
+    max_size: AtomicU64,
+}
 
 unsafe impl<A: GlobalAlloc> GlobalAlloc for Trallocator<A> {
     unsafe fn alloc(&self, l: Layout) -> *mut u8 {
-        self.1.fetch_add(l.size() as u64, Ordering::SeqCst);
-        self.0.alloc(l)
+        self.allocated.fetch_add(l.size() as u64, Ordering::SeqCst);
+        self.calc_size();
+        self.alloc.alloc(l)
     }
     unsafe fn dealloc(&self, ptr: *mut u8, l: Layout) {
-        self.0.dealloc(ptr, l);
-        self.1.fetch_sub(l.size() as u64, Ordering::SeqCst);
+        self.alloc.dealloc(ptr, l);
+        self.freed.fetch_add(l.size() as u64, Ordering::SeqCst);
+        self.calc_size();
     }
 }
 
 impl<A: GlobalAlloc> Trallocator<A> {
     pub const fn new(a: A) -> Self {
-        Trallocator(a, AtomicU64::new(0))
+        Trallocator{
+            alloc: a,
+            allocated: AtomicU64::new(0),
+            freed: AtomicU64::new(0),
+            max_size: AtomicU64::new(0),
+        }
     }
 
     pub fn reset(&self) {
-        self.1.store(0, Ordering::SeqCst);
+        self.freed.store(0, Ordering::SeqCst);
+        self.max_size.store(0, Ordering::SeqCst);
+        self.allocated.store(0, Ordering::SeqCst);
     }
-    pub fn get(&self) -> u64 {
-        self.1.load(Ordering::SeqCst)
+    pub fn get_allocated(&self) -> u64 {
+        self.allocated.load(Ordering::SeqCst)
+    }
+
+    pub fn get_freed(&self) -> u64 {
+        self.freed.load(Ordering::SeqCst)
+    }
+
+    fn calc_size(&self) {
+        if let Some(size) = self.get_allocated().checked_sub(self.get_freed()) {
+            if size > self.get_max_size() {
+                self.max_size.store(size, Ordering::SeqCst);
+            }
+        }
+    }
+
+    pub fn get_max_size(&self) -> u64 {
+        self.max_size.load(Ordering::SeqCst)
+    }
+
+    pub fn get_current_size(&self) -> u64 {
+        self.get_allocated() - self.get_freed()
     }
 }
 use std::alloc::System;
+use std::fmt::format;
 use criterion::measurement::WallTime;
 
 #[global_allocator]
@@ -63,12 +98,26 @@ fn bench_clock_reduction(c: &mut Criterion) {
 
 fn add_benchmark(group: &mut BenchmarkGroup<WallTime>, loader: &mut Box<dyn ComponentLoader>, id: &str, input: &str, disable_clock_reduction: bool) {
     GLOBAL.reset();
-    println!("Starting memory {id} | {} bytes", GLOBAL.get());
+    println!("{id} | {} allocated | {} freed | {} max size", format_bytes(GLOBAL.get_allocated()), format_bytes(GLOBAL.get_freed()),  format_bytes(GLOBAL.get_max_size()));
     group.bench_function(id, |b| {
         loader.get_settings_mut().disable_clock_reduction = disable_clock_reduction;
         b.iter(|| clock_reduction_helper(loader, input));
     });
-    println!("Ending memory memory {id} | {} bytes", GLOBAL.get());
+    println!("{id} | {} allocated | {} freed | {} current size | {} max size", format_bytes(GLOBAL.get_allocated()), format_bytes(GLOBAL.get_freed()), format_bytes(GLOBAL.get_current_size()),  format_bytes(GLOBAL.get_max_size()));
+
+}
+
+fn format_bytes(bytes: u64) -> String {
+    match bytes.checked_ilog2() {
+        Some(0..=9) => format!("{} B", bytes),
+        Some(10..=19) => format!("{} KiB", bytes / 1024),
+        Some(20..=29) => format!("{} MiB", bytes / (1024 * 1024)),
+        Some(30..=39) => format!("{} GiB", bytes / (1024 * 1024 * 1024)),
+        Some(40..=49) => format!("{} TiB", bytes / (1024 * 1024 * 1024 * 1024)),
+        Some(50..=59) => format!("{} PiB", bytes / (1024 * 1024 * 1024 * 1024 * 1024)),
+        Some(_) => format!("{bytes} B"),
+        None => format!("{bytes} B"),
+    }
 }
 
 fn clock_reduction_helper(loader: &mut Box<dyn ComponentLoader>, input: &str) {
