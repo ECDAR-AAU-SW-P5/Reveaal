@@ -1,12 +1,40 @@
 use std::ops::Deref;
 use std::alloc::{GlobalAlloc, Layout};
 use std::sync::atomic::{AtomicU64, Ordering};
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion, BenchmarkGroup};
 use reveaal::ComponentLoader;
 
+pub struct Trallocator<A: GlobalAlloc>(pub A, AtomicU64);
+
+unsafe impl<A: GlobalAlloc> GlobalAlloc for Trallocator<A> {
+    unsafe fn alloc(&self, l: Layout) -> *mut u8 {
+        self.1.fetch_add(l.size() as u64, Ordering::SeqCst);
+        self.0.alloc(l)
+    }
+    unsafe fn dealloc(&self, ptr: *mut u8, l: Layout) {
+        self.0.dealloc(ptr, l);
+        self.1.fetch_sub(l.size() as u64, Ordering::SeqCst);
+    }
+}
+
+impl<A: GlobalAlloc> Trallocator<A> {
+    pub const fn new(a: A) -> Self {
+        Trallocator(a, AtomicU64::new(0))
+    }
+
+    pub fn reset(&self) {
+        self.1.store(0, Ordering::SeqCst);
+    }
+    pub fn get(&self) -> u64 {
+        self.1.load(Ordering::SeqCst)
+    }
+}
+use std::alloc::System;
+use criterion::measurement::WallTime;
+
 #[global_allocator]
-static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
-use jemalloc_ctl::{stats, epoch};
+static GLOBAL: Trallocator<System> = Trallocator::new(System);
+
 
 mod bench_helper;
 use reveaal::extract_system_rep::create_executable_query;
@@ -27,30 +55,20 @@ fn bench_clock_reduction(c: &mut Criterion) {
     let mut loader = bench_helper::get_uni_loader();
     let mut group = c.benchmark_group("Clock Reduction");
 
-    epoch::advance().unwrap();
-    let start = stats::resident::read().unwrap();
-    group.bench_function("Refinement check - No reduction", |b| {
-        loader.get_settings_mut().disable_clock_reduction = false;
-        b.iter(|| clock_reduction_helper(&mut loader, REFINEMENT_QUERY));
-    });
-    epoch::advance().unwrap();
-    let end = stats::resident::read().unwrap();
-    let allocated = stats::allocated::read().unwrap();
-    let resident = stats::resident::read().unwrap();
-    println!("{} bytes allocated/{} bytes resident. Total allocation change {}", allocated, resident, end - start);
-
-    epoch::advance().unwrap();
-    let start = stats::resident::read().unwrap();
-    group.bench_function("Refinement check - With reduction", |b| {
-        loader.get_settings_mut().disable_clock_reduction = true;
-        b.iter(|| clock_reduction_helper(&mut loader, REFINEMENT_QUERY));
-    });
-    let end = stats::resident::read().unwrap();
-    let allocated = stats::allocated::read().unwrap();
-    let resident = stats::resident::read().unwrap();
-    println!("{} bytes allocated/{} bytes resident. Total allocation change {}", allocated, resident, end - start);
+    add_benchmark(&mut group, &mut loader, "Refinement - No reduction", REFINEMENT_QUERY, true);
+    add_benchmark(&mut group, &mut loader, "Refinement - With reduction", REFINEMENT_QUERY, false);
 
     group.finish();
+}
+
+fn add_benchmark(group: &mut BenchmarkGroup<WallTime>, loader: &mut Box<dyn ComponentLoader>, id: &str, input: &str, disable_clock_reduction: bool) {
+    GLOBAL.reset();
+    println!("Starting memory {id} | {} bytes", GLOBAL.get());
+    group.bench_function(id, |b| {
+        loader.get_settings_mut().disable_clock_reduction = disable_clock_reduction;
+        b.iter(|| clock_reduction_helper(loader, input));
+    });
+    println!("Ending memory memory {id} | {} bytes", GLOBAL.get());
 }
 
 fn clock_reduction_helper(loader: &mut Box<dyn ComponentLoader>, input: &str) {

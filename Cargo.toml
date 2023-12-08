@@ -46,9 +46,6 @@ itertools = "0.10.5"
 regex = "1"
 rayon = "1.6.1"
 lazy_static = "1.4.0"
-jemallocator = "0.5"
-jemalloc-ctl = "0.5.4"
-jemalloc-sys = {version = "0.5", features = ["stats"]}
 
 # Enable optimizations for EDBM in debug mode, but not for our code:
 [profile.dev.package.edbm]
