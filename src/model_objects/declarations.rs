@@ -1,5 +1,6 @@
 use edbm::util::constraints::ClockIndex;
 use serde::{Deserialize, Serialize};
+use std::collections::hash_set::Iter;
 use std::collections::{HashMap, HashSet};
 
 /// The declaration struct is used to hold the indices for each clock, and is meant to be the owner of int variables once implemented
@@ -44,7 +45,7 @@ impl Declarations {
             .map(|(k, _)| k)
     }
 
-    pub fn remove_clocks(&mut self, clocks_to_be_removed: &[ClockIndex]) {
+    pub fn remove_clocks(&mut self, clocks_to_be_removed: &Vec<ClockIndex>) {
         let mut clock_count = *self.clocks.values().next().unwrap_or(&(1usize));
         let mut new_clocks: HashMap<String, ClockIndex> = HashMap::new();
 
@@ -61,11 +62,29 @@ impl Declarations {
     }
 
     pub fn combine_clocks(&mut self, combine_clocks: &Vec<HashSet<ClockIndex>>) {
-        for (clock_to_be_replaced, new_clock) in combine_clocks {
-            for (_, clock) in self.clocks.iter_mut() {
-                if clock == clock_to_be_replaced {
-                    *clock = *new_clock;
-                    break;
+        for clock_group in combine_clocks {
+            let mut clock_group_iter: Iter<ClockIndex> = clock_group.iter();
+            let first_clock = match clock_group_iter.next() {
+                None => {
+                    continue;
+                }
+                Some(clock) => clock,
+            };
+            let mut next_clock_to_be_combined = match clock_group_iter.next() {
+                None => {
+                    continue;
+                }
+                Some(clock) => clock,
+            };
+            for (_, current_clock) in self.clocks.iter_mut() {
+                if current_clock == next_clock_to_be_combined {
+                    *current_clock = *first_clock;
+                    next_clock_to_be_combined = match clock_group_iter.next() {
+                        None => {
+                            break;
+                        }
+                        Some(clock) => clock,
+                    };
                 }
             }
         }

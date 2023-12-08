@@ -390,23 +390,24 @@ impl TransitionSystem for Quotient {
         CompositionType::Quotient
     }
 
-    fn remove_clocks(&mut self, clocks: &HashSet<ClockIndex>) -> Result<(), String> {
-        let clocks_less_or_equal =
-            clocks.partition_point(|clock| clock <= &self.quotient_clock_index);
-        if clocks[clocks_less_or_equal] == self.quotient_clock_index {
-            return Err("Can't remove quotient".to_string()); // theoretically should be possible
-        }
-        self.quotient_clock_index -= clocks_less_or_equal;
+    fn remove_clocks(
+        &mut self,
+        clocks: &Vec<ClockIndex>,
+        shrink_expand: &Vec<bool>,
+    ) -> Result<(), String> {
+        let clocks_less = clocks.partition_point(|clock| clock < &self.quotient_clock_index);
+        self.quotient_clock_index -= clocks_less;
 
         let (a, b) = self.get_children_mut();
-        a.remove_clocks(clocks)?;
-        b.remove_clocks(clocks)?;
-        self.dim = a.get_dim() + b.get_dim() + 1; // +1 for quotient
+        a.remove_clocks(clocks, shrink_expand)?;
+        b.remove_clocks(clocks, shrink_expand)?;
+        self.dim -= clocks.len(); // +1 for quotient
         Ok(())
     }
 
     fn combine_clocks(&mut self, clocks: &Vec<HashSet<ClockIndex>>) -> Result<(), String> {
-        match clocks.get(&self.quotient_clock_index) {
+        todo!();
+        /*match clocks.get(&self.quotient_clock_index) {
             None => {}
             Some(clock) => {
                 self.quotient_clock_index = *clock;
@@ -423,7 +424,7 @@ impl TransitionSystem for Quotient {
         a.combine_clocks(clocks)?;
         b.combine_clocks(clocks)?;
         self.dim = a.get_dim() + b.get_dim() + 1; // +1 for quotient
-        Ok(())
+        Ok(())*/
     }
 
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String> {

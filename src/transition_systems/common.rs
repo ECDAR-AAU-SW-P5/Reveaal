@@ -134,12 +134,15 @@ impl<T: ComposedTransitionSystem> TransitionSystem for T {
         self.get_composition_type()
     }
 
-    fn remove_clocks(&mut self, clocks: &HashSet<ClockIndex>) -> Result<(), String> {
+    fn remove_clocks(
+        &mut self,
+        clocks: &Vec<ClockIndex>,
+        shrink_expand: &Vec<bool>,
+    ) -> Result<(), String> {
         let (left, right) = self.get_children_mut();
-        left.remove_clocks(clocks)?; // return if not ok
-        right.remove_clocks(clocks)?;
-        let new_dim = right.get_dim() + left.get_dim();
-        self.set_dim(new_dim);
+        left.remove_clocks(clocks, shrink_expand)?; // return if not ok
+        right.remove_clocks(clocks, shrink_expand)?;
+        self.set_dim(self.get_dim() - clocks.len());
         Ok(())
     }
 

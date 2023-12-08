@@ -2,6 +2,7 @@ use crate::system::query_failures::SystemRecipeFailure;
 use crate::transition_systems::clock_reduction::clock_analysis_graph::find_redundant_clocks;
 use crate::transition_systems::TransitionSystemPtr;
 use edbm::util::constraints::ClockIndex;
+use itertools::Itertools;
 use log::debug;
 use std::collections::HashSet;
 
@@ -25,50 +26,65 @@ pub fn clock_reduce(
     } else if rhs.is_none() {
         return clock_reduce_single(lhs, dim, quotient_clock);
     }
+
     let rhs = rhs.unwrap();
 
-    let ((l_remove_clocks, l_combine_clocks), (r_remove_clocks, r_combine_clocks)) =
-        filter_redundant_clocks(
-            find_redundant_clocks(lhs),
-            find_redundant_clocks(rhs),
-            &quotient_clock,
-            lhs.get_dim(),
-        );
+    let lhs_red = find_redundant_clocks(lhs);
+    let rhs_red = find_redundant_clocks(rhs);
 
-    // length of remove_clocks + all the clocks in each clock group - amount of clock groups.
-    let l_count = l_remove_clocks.len()
-        + l_combine_clocks
-            .iter()
-            .map(|group| group.iter().sum::<usize>())
-            .sum::<usize>()
-        - l_combine_clocks.len();
-    let r_count = r_remove_clocks.len()
-        + r_combine_clocks
-            .iter()
-            .map(|group| group.iter().sum::<usize>())
-            .sum::<usize>()
-        - r_combine_clocks.len();
+    let ((l_remove_clocks, l_combine_clocks), (r_remove_clocks, r_combine_clocks)) =
+        filter_redundant_clocks(lhs_red, rhs_red, &quotient_clock); //todo clean up
+
+    let l_remove_clocks = l_remove_clocks.iter().sorted().copied().collect();
+    let r_remove_clocks = r_remove_clocks.iter().sorted().copied().collect();
+
+    let l_count = get_count(&l_remove_clocks, &l_combine_clocks);
+    let r_count = get_count(&r_remove_clocks, &r_combine_clocks);
 
     debug!("Clocks to be reduced: {l_count:?} + {r_count:?}");
-    *dim -= l_count + r_count;
+    *dim -= r_remove_clocks.len(); //l_count;
     debug!("New dimension: {dim}");
 
     if !l_remove_clocks.is_empty() {
-        lhs.remove_clocks(&l_remove_clocks).unwrap();
+        let l_shrink_expand = create_shrink_expand(&l_remove_clocks, &lhs.get_dim());
+
+        lhs.remove_clocks(&l_remove_clocks, &l_shrink_expand)
+            .unwrap();
         //todo remap replace_clocks. Example: combine_clock { {2,3,4} } and remove_clock { 1 } will modify combine_clock into { {1, 2, 3 } }
     }
     if !l_combine_clocks.is_empty() {
-        lhs.combine_clocks(&l_combine_clocks).unwrap();
+        //lhs.combine_clocks(&l_combine_clocks).unwrap(); todo
     }
     if !r_remove_clocks.is_empty() {
-        rhs.remove_clocks(&r_remove_clocks).unwrap();
+        let r_shrink_expand = create_shrink_expand(&r_remove_clocks, &rhs.get_dim());
+
+        rhs.remove_clocks(&r_remove_clocks, &r_shrink_expand)
+            .unwrap();
         //todo remap replace_clocks. Example: combine_clock { {2,3,4} } and remove_clock { 1 } will modify combine_clock into { {1, 2, 3 } }
     }
     if !r_combine_clocks.is_empty() {
-        rhs.combine_clocks(&r_combine_clocks).unwrap();
+        //rhs.combine_clocks(&r_combine_clocks).unwrap(); todo
     }
 
     Ok(())
+}
+
+fn create_shrink_expand(clocks: &Vec<ClockIndex>, dim: &usize) -> Vec<bool> {
+    let mut shrink_expand: Vec<bool> = vec![true; *dim];
+    for clock in clocks {
+        shrink_expand[*clock] = false;
+    }
+    shrink_expand
+}
+
+// length of remove_clocks + all the clocks in each clock group - amount of clock groups.
+fn get_count(remove_clocks: &Vec<ClockIndex>, combine_clocks: &Vec<HashSet<ClockIndex>>) -> usize {
+    remove_clocks.len()
+        + combine_clocks
+            .iter()
+            .map(|group| group.iter().sum::<usize>())
+            .sum::<usize>()
+        - combine_clocks.len()
 }
 
 /// Clock reduces a "single_expression", such as consistency
@@ -84,28 +100,27 @@ fn clock_reduce_single(
     dim: &mut usize,
     quotient_clock: ClockIndex,
 ) -> Result<(), Box<SystemRecipeFailure>> {
-    let (mut remove_clocks, combine_clocks) = find_redundant_clocks(sys);
+    let (mut remove_clocks, mut combine_clocks) = find_redundant_clocks(sys);
 
     remove_clocks.remove(&quotient_clock);
-    for mut clock_group in combine_clocks {
+    for clock_group in &mut combine_clocks {
         clock_group.remove(&quotient_clock);
     }
 
-    let clock_count: usize = remove_clocks.len()
-        + combine_clocks
-            .iter()
-            .map(|group| group.iter().sum::<usize>())
-            .sum::<usize>()
-        - combine_clocks.len();
+    let remove_clocks = remove_clocks.iter().sorted().copied().collect();
+
+    let clock_count: usize = get_count(&remove_clocks, &combine_clocks);
     debug!("Clocks to be reduced: {clock_count:?}");
-    *dim -= clock_count;
+    *dim -= remove_clocks.len(); //clock_count; todo
     debug!("New dimension: {dim}");
     if !remove_clocks.is_empty() {
-        sys.remove_clocks(&remove_clocks).unwrap();
+        let shrink_expand = create_shrink_expand(&remove_clocks, &sys.get_dim());
+
+        sys.remove_clocks(&remove_clocks, &shrink_expand).unwrap();
         //todo remap replace_clocks. Example: combine_clock { {2,3,4} } and remove_clock { 1 } will modify combine_clock into { {1, 2, 3 } }
     }
     if !combine_clocks.is_empty() {
-        sys.combine_clocks(&combine_clocks).unwrap();
+        //sys.combine_clocks(&combine_clocks).unwrap(); todo
     }
     Ok(())
 }
@@ -114,16 +129,14 @@ fn filter_redundant_clocks(
     lhs: (HashSet<ClockIndex>, Vec<HashSet<ClockIndex>>),
     rhs: (HashSet<ClockIndex>, Vec<HashSet<ClockIndex>>),
     quotient_clock: &ClockIndex,
-    split_index: ClockIndex,
 ) -> (
     (HashSet<ClockIndex>, Vec<HashSet<ClockIndex>>),
     (HashSet<ClockIndex>, Vec<HashSet<ClockIndex>>),
 ) {
-    fn filter_one_side<P: Fn(ClockIndex) -> bool>(
+    fn filter_one_side(
         l: (HashSet<ClockIndex>, Vec<HashSet<ClockIndex>>),
         r: (HashSet<ClockIndex>, Vec<HashSet<ClockIndex>>),
         quotient: &ClockIndex,
-        bound_predicate: P,
     ) -> (HashSet<ClockIndex>, Vec<HashSet<ClockIndex>>) {
         // Remove clocks
         let remove_clocks =
@@ -134,9 +147,6 @@ fn filter_redundant_clocks(
                 // which would mean it can be removed
                 // e.g "A <= B", we can find clocks from B that are not used in A, so they are marked as remove
                 .filter(|remove| r.0.contains(remove))
-                // Takes all the clocks within the bounds of the given system
-                // This is done to ensure that we don't try to remove a clock from the rhs system
-                .filter(|remove| bound_predicate(*remove))
                 // Avoid removing the quotient clock
                 .filter(|remove| remove != quotient)
                 .collect();
@@ -148,9 +158,8 @@ fn filter_redundant_clocks(
                 .filter_map(|replace| {
                     let clock_group: HashSet<ClockIndex> = replace
                         .iter()
+                        .filter(|replace| replace != &quotient)
                         .copied()
-                        .filter(|clock| bound_predicate(*clock))
-                        .filter(|replace| replace != quotient)
                         .collect::<HashSet<ClockIndex>>();
                     // minimum 2 clocks to be combined into 1
                     if clock_group.len() < 2 {
@@ -163,10 +172,8 @@ fn filter_redundant_clocks(
         (remove_clocks, clock_group)
     }
     (
-        filter_one_side(lhs.clone(), rhs.clone(), quotient_clock, |c| {
-            c <= split_index
-        }),
-        filter_one_side(rhs, lhs, quotient_clock, |c| c > split_index),
+        filter_one_side(lhs.clone(), rhs.clone(), quotient_clock),
+        filter_one_side(rhs, lhs, quotient_clock),
     )
 }
 #[cfg(test)]
@@ -419,6 +426,7 @@ mod tests {
         use crate::data_reader::json_reader::read_json_component;
         use crate::system::input_enabler;
         use crate::transition_systems::clock_reduction::clock_analysis_graph::find_redundant_clocks;
+        use crate::transition_systems::clock_reduction::reduction::create_shrink_expand;
         use crate::transition_systems::{CompiledComponent, TransitionSystem, TransitionSystemPtr};
         use std::collections::HashSet;
         use test_case::test_case;
@@ -582,8 +590,11 @@ mod tests {
                 .unwrap();
 
             // Act
+            let remove_clocks = Vec::from([clock_index]);
+            let shrink_expand = create_shrink_expand(&remove_clocks, &dim);
+
             compiled_component
-                .remove_clocks(&HashSet::from([clock_index]))
+                .remove_clocks(&remove_clocks, &shrink_expand)
                 .unwrap();
 
             // Assert

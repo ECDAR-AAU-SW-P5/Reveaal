@@ -169,7 +169,11 @@ pub trait TransitionSystem: DynClone {
     }
 
     /// Assumes clocks are in order such as [1, 3, 4, 5]
-    fn remove_clocks(&mut self, clocks: &HashSet<ClockIndex>) -> Result<(), String>;
+    fn remove_clocks(
+        &mut self,
+        clocks: &Vec<ClockIndex>,
+        shrink_expand: &Vec<bool>,
+    ) -> Result<(), String>;
 
     /// Assumes that no clock is remapped to itself and that a clock is replaced with an existing clock such that they become equal
     ///

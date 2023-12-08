@@ -5,8 +5,6 @@ use crate::system::query_failures::{
     ActionFailure, ConsistencyResult, DeterminismResult, SystemRecipeFailure,
 };
 use crate::system::specifics::SpecificLocation;
-use crate::transition_systems::clock_reduction::clock_removal::remove_clock_from_federation;
-use crate::transition_systems::compiled_update::CompiledUpdate;
 use crate::transition_systems::{LocationTree, TransitionSystem, TransitionSystemPtr};
 use edbm::util::bounds::Bounds;
 use edbm::util::constraints::ClockIndex;
@@ -219,45 +217,75 @@ impl TransitionSystem for CompiledComponent {
         vec![&self.comp_info.name]
     }
 
-    fn remove_clocks(&mut self, clocks: &HashSet<ClockIndex>) -> Result<(), String> {
+    fn remove_clocks(
+        &mut self,
+        clocks: &Vec<ClockIndex>,
+        shrink_expand: &Vec<bool>,
+    ) -> Result<(), String> {
         // Remove clock from Declarations
         self.comp_info.declarations.remove_clocks(clocks);
         // Remove clock from Locations
         for loc in self.locations.values_mut() {
             // Remove from Invariant
-            for clock in clocks {
-                // todo: replace with remove_many
-                match &loc.invariant {
-                    None => {}
-                    Some(inv) => {
-                        loc.invariant = Some(remove_clock_from_federation(inv, clock, None));
-                    }
+            match &loc.invariant {
+                None => {}
+                Some(federation) => {
+                    loc.invariant = Some(federation.shrink_expand(shrink_expand, shrink_expand).0);
                 }
             }
+        }
+        // Remove clock from initial location
+        match &mut self.initial_location {
+            None => {}
+            Some(location) => match &mut location.invariant {
+                None => {}
+                Some(fed) => {
+                    location.invariant = Some(fed.shrink_expand(shrink_expand, shrink_expand).0);
+                }
+            },
         }
         // Remove clock from Edges
         for edge in self.location_edges.values_mut() {
             for (_, transition) in edge.iter_mut() {
-                // todo: replace with remove_many
-                for clock in clocks {
-                    // Remove clock from Guard
-                    transition.guard_zone =
-                        remove_clock_from_federation(&transition.guard_zone, clock, None);
-                }
+                // Remove clock from Guard
+                transition.guard_zone = transition
+                    .guard_zone
+                    .shrink_expand(shrink_expand, shrink_expand)
+                    .0;
 
                 // Remove clock from Update
                 transition
                     .updates
                     .retain(|update| !clocks.contains(&update.clock_index));
+
+                for update in &mut transition.updates {
+                    let clocks_less = clocks.partition_point(|clock| clock < &update.clock_index);
+                    update.clock_index -= clocks_less;
+                }
+
+                // Remove clock from target locations (supposedly they're not updated when iterating self.locations)
+                match &transition.target_locations.invariant {
+                    None => {}
+                    Some(fed) => {
+                        transition.target_locations.invariant =
+                            Some(fed.shrink_expand(shrink_expand, shrink_expand).0);
+                    }
+                }
             }
         }
 
         self.dim -= clocks.len();
+
+        // Rebuild max bounds
+        let b = Bounds::new(self.dim);
+        self.comp_info.max_bounds = ... ;//todo
+
         Ok(())
     }
 
     fn combine_clocks(&mut self, clocks: &Vec<HashSet<ClockIndex>>) -> Result<(), String> {
-        // Replace clock from Declarations
+        todo!();
+        /*// Replace clock from Declarations
         self.comp_info.declarations.combine_clocks(clocks);
         // Replace clock from Locations
         for loc in self.locations.values_mut() {
@@ -308,7 +336,7 @@ impl TransitionSystem for CompiledComponent {
         }
 
         self.dim -= clocks.len();
-        Ok(())
+        Ok(())*/
     }
 
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String> {
