@@ -1,0 +1,993 @@
+{
+  "name": "get_component_test",
+  "declarations": "clock y, x, y1;",
+  "locations": [
+    {
+      "id": "L20||L5",
+      "invariant": "",
+      "type": "INITIAL",
+      "urgency": "NORMAL",
+      "nickname": "",
+      "x": 406.1292,
+      "y": 132.34668,
+      "color": 6,
+      "nickname_x": 30.0,
+      "nickname_y": -10.0,
+      "invariant_x": 30.0,
+      "invariant_y": 10.0
+    },
+    {
+      "id": "L22||L5",
+      "invariant": "x<=2",
+      "type": "NORMAL",
+      "urgency": "NORMAL",
+      "nickname": "",
+      "x": 416.55136,
+      "y": 428.06522,
+      "color": 6,
+      "nickname_x": 30.0,
+      "nickname_y": -10.0,
+      "invariant_x": 30.0,
+      "invariant_y": 10.0
+    },
+    {
+      "id": "L23||L5",
+      "invariant": "x<=2 && y<=2",
+      "type": "NORMAL",
+      "urgency": "NORMAL",
+      "nickname": "",
+      "x": 214.27003,
+      "y": 458.6914,
+      "color": 6,
+      "nickname_x": 30.0,
+      "nickname_y": -10.0,
+      "invariant_x": 30.0,
+      "invariant_y": 10.0
+    },
+    {
+      "id": "L21||L4",
+      "invariant": "y<=2 && y1<=6",
+      "type": "NORMAL",
+      "urgency": "NORMAL",
+      "nickname": "",
+      "x": 157.68375,
+      "y": 363.3612,
+      "color": 6,
+      "nickname_x": 30.0,
+      "nickname_y": -10.0,
+      "invariant_x": 30.0,
+      "invariant_y": 10.0
+    },
+    {
+      "id": "L23||L4",
+      "invariant": "x<=2 && y<=2 && y1<=6",
+      "type": "NORMAL",
+      "urgency": "NORMAL",
+      "nickname": "",
+      "x": 159.1495,
+      "y": 596.9442,
+      "color": 6,
+      "nickname_x": 30.0,
+      "nickname_y": -10.0,
+      "invariant_x": 30.0,
+      "invariant_y": 10.0
+    },
+    {
+      "id": "L22||L4",
+      "invariant": "x<=2 && y1<=6",
+      "type": "NORMAL",
+      "urgency": "NORMAL",
+      "nickname": "",
+      "x": 344.93454,
+      "y": 559.2589,
+      "color": 6,
+      "nickname_x": 30.0,
+      "nickname_y": -10.0,
+      "invariant_x": 30.0,
+      "invariant_y": 10.0
+    },
+    {
+      "id": "L20||L4",
+      "invariant": "y1<=6",
+      "type": "NORMAL",
+      "urgency": "NORMAL",
+      "nickname": "",
+      "x": 347.45917,
+      "y": 337.0826,
+      "color": 6,
+      "nickname_x": 30.0,
+      "nickname_y": -10.0,
+      "invariant_x": 30.0,
+      "invariant_y": 10.0
+    },
+    {
+      "id": "L21||L5",
+      "invariant": "y<=2",
+      "type": "NORMAL",
+      "urgency": "NORMAL",
+      "nickname": "",
+      "x": 223.58936,
+      "y": 196.27661,
+      "color": 6,
+      "nickname_x": 30.0,
+      "nickname_y": -10.0,
+      "invariant_x": 30.0,
+      "invariant_y": 10.0
+    }
+  ],
+  "edges": [
+    {
+      "id": "E0",
+      "sourceLocation": "L20||L5",
+      "targetLocation": "L22||L5",
+      "status": "INPUT",
+      "guard": "",
+      "update": "x=0",
+      "sync": "grant",
+      "select": "",
+      "nails": [
+        {
+          "x": 487.14368,
+          "y": 203.45406,
+          "property_type": "UPDATE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 489.44858,
+          "y": 301.13965,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E1",
+      "sourceLocation": "L20||L5",
+      "targetLocation": "L21||L5",
+      "status": "INPUT",
+      "guard": "",
+      "update": "y=0",
+      "sync": "pub",
+      "select": "",
+      "nails": [
+        {
+          "x": 351.07184,
+          "y": 66.35399,
+          "property_type": "UPDATE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 286.50012,
+          "y": 85.139046,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E2",
+      "sourceLocation": "L20||L5",
+      "targetLocation": "L20||L5",
+      "status": "OUTPUT",
+      "guard": "y1>=2",
+      "update": "",
+      "sync": "tea",
+      "select": "",
+      "nails": [
+        {
+          "x": 431.54303,
+          "y": 50.0,
+          "property_type": "GUARD",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 462.43057,
+          "y": 75.53316,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E3",
+      "sourceLocation": "L22||L5",
+      "targetLocation": "L22||L5",
+      "status": "INPUT",
+      "guard": "",
+      "update": "",
+      "sync": "grant",
+      "select": "",
+      "nails": [
+        {
+          "x": 524.4856,
+          "y": 430.22595,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 495.70673,
+          "y": 404.89963,
+          "property_type": "NONE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E4",
+      "sourceLocation": "L22||L5",
+      "targetLocation": "L23||L5",
+      "status": "INPUT",
+      "guard": "",
+      "update": "y=0",
+      "sync": "pub",
+      "select": "",
+      "nails": [
+        {
+          "x": 351.79626,
+          "y": 499.27094,
+          "property_type": "UPDATE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 292.56003,
+          "y": 511.46555,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E5",
+      "sourceLocation": "L22||L5",
+      "targetLocation": "L22||L5",
+      "status": "OUTPUT",
+      "guard": "y1>=2",
+      "update": "",
+      "sync": "tea",
+      "select": "",
+      "nails": [
+        {
+          "x": 501.54742,
+          "y": 494.03015,
+          "property_type": "GUARD",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 470.58826,
+          "y": 470.45007,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E6",
+      "sourceLocation": "L22||L5",
+      "targetLocation": "L20||L4",
+      "status": "OUTPUT",
+      "guard": "",
+      "update": "y1=0",
+      "sync": "coin",
+      "select": "",
+      "nails": [
+        {
+          "x": 446.89435,
+          "y": 367.6498,
+          "property_type": "UPDATE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 411.42554,
+          "y": 327.21802,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E7",
+      "sourceLocation": "L23||L5",
+      "targetLocation": "L23||L5",
+      "status": "INPUT",
+      "guard": "",
+      "update": "",
+      "sync": "grant",
+      "select": "",
+      "nails": [
+        {
+          "x": 236.88687,
+          "y": 526.9872,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 218.72813,
+          "y": 559.6509,
+          "property_type": "NONE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E8",
+      "sourceLocation": "L23||L5",
+      "targetLocation": "L23||L5",
+      "status": "INPUT",
+      "guard": "",
+      "update": "",
+      "sync": "pub",
+      "select": "",
+      "nails": [
+        {
+          "x": 171.48442,
+          "y": 490.2125,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 169.0311,
+          "y": 448.19983,
+          "property_type": "NONE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E9",
+      "sourceLocation": "L23||L5",
+      "targetLocation": "L23||L5",
+      "status": "OUTPUT",
+      "guard": "y1>=2",
+      "update": "",
+      "sync": "tea",
+      "select": "",
+      "nails": [
+        {
+          "x": 252.21019,
+          "y": 465.7423,
+          "property_type": "GUARD",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 240.3021,
+          "y": 422.37302,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E10",
+      "sourceLocation": "L23||L5",
+      "targetLocation": "L21||L4",
+      "status": "OUTPUT",
+      "guard": "",
+      "update": "y1=0",
+      "sync": "coin",
+      "select": "",
+      "nails": [
+        {
+          "x": 123.982,
+          "y": 423.78693,
+          "property_type": "UPDATE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 98.435104,
+          "y": 383.2405,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E11",
+      "sourceLocation": "L23||L5",
+      "targetLocation": "L22||L5",
+      "status": "OUTPUT",
+      "guard": "",
+      "update": "",
+      "sync": "patent",
+      "select": "",
+      "nails": [
+        {
+          "x": 310.29202,
+          "y": 432.69904,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E12",
+      "sourceLocation": "L21||L4",
+      "targetLocation": "L23||L4",
+      "status": "INPUT",
+      "guard": "",
+      "update": "x=0",
+      "sync": "grant",
+      "select": "",
+      "nails": [
+        {
+          "x": 52.538143,
+          "y": 456.43497,
+          "property_type": "UPDATE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 52.892994,
+          "y": 543.11993,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E13",
+      "sourceLocation": "L21||L4",
+      "targetLocation": "L21||L4",
+      "status": "INPUT",
+      "guard": "",
+      "update": "",
+      "sync": "pub",
+      "select": "",
+      "nails": [
+        {
+          "x": 81.23261,
+          "y": 320.4497,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 50.0,
+          "y": 342.80243,
+          "property_type": "NONE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E14",
+      "sourceLocation": "L21||L4",
+      "targetLocation": "L21||L5",
+      "status": "OUTPUT",
+      "guard": "",
+      "update": "",
+      "sync": "tea",
+      "select": "",
+      "nails": [
+        {
+          "x": 165.12186,
+          "y": 265.60352,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E15",
+      "sourceLocation": "L21||L4",
+      "targetLocation": "L21||L5",
+      "status": "OUTPUT",
+      "guard": "y1>=4",
+      "update": "",
+      "sync": "cof",
+      "select": "",
+      "nails": [
+        {
+          "x": 105.78519,
+          "y": 257.90686,
+          "property_type": "GUARD",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 131.2636,
+          "y": 197.87534,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E16",
+      "sourceLocation": "L21||L4",
+      "targetLocation": "L20||L4",
+      "status": "OUTPUT",
+      "guard": "",
+      "update": "",
+      "sync": "patent",
+      "select": "",
+      "nails": [
+        {
+          "x": 264.8283,
+          "y": 346.4707,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E17",
+      "sourceLocation": "L23||L4",
+      "targetLocation": "L23||L4",
+      "status": "INPUT",
+      "guard": "",
+      "update": "",
+      "sync": "grant",
+      "select": "",
+      "nails": [
+        {
+          "x": 64.386734,
+          "y": 670.7063,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 99.73161,
+          "y": 674.6968,
+          "property_type": "NONE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E18",
+      "sourceLocation": "L23||L4",
+      "targetLocation": "L23||L4",
+      "status": "INPUT",
+      "guard": "",
+      "update": "",
+      "sync": "pub",
+      "select": "",
+      "nails": [
+        {
+          "x": 136.76578,
+          "y": 724.4145,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 156.61276,
+          "y": 687.50916,
+          "property_type": "NONE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E19",
+      "sourceLocation": "L23||L4",
+      "targetLocation": "L23||L5",
+      "status": "OUTPUT",
+      "guard": "",
+      "update": "",
+      "sync": "tea",
+      "select": "",
+      "nails": [
+        {
+          "x": 172.30023,
+          "y": 550.7377,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E20",
+      "sourceLocation": "L23||L4",
+      "targetLocation": "L23||L5",
+      "status": "OUTPUT",
+      "guard": "y1>=4",
+      "update": "",
+      "sync": "cof",
+      "select": "",
+      "nails": [
+        {
+          "x": 99.0408,
+          "y": 604.6611,
+          "property_type": "GUARD",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 118.62261,
+          "y": 550.2506,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E21",
+      "sourceLocation": "L23||L4",
+      "targetLocation": "L21||L4",
+      "status": "OUTPUT",
+      "guard": "",
+      "update": "",
+      "sync": "coin",
+      "select": "",
+      "nails": [
+        {
+          "x": 113.966125,
+          "y": 489.1118,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E22",
+      "sourceLocation": "L23||L4",
+      "targetLocation": "L22||L4",
+      "status": "OUTPUT",
+      "guard": "",
+      "update": "",
+      "sync": "patent",
+      "select": "",
+      "nails": [
+        {
+          "x": 256.66772,
+          "y": 618.8311,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E23",
+      "sourceLocation": "L22||L4",
+      "targetLocation": "L22||L4",
+      "status": "INPUT",
+      "guard": "",
+      "update": "",
+      "sync": "grant",
+      "select": "",
+      "nails": [
+        {
+          "x": 356.15048,
+          "y": 640.68335,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 380.24286,
+          "y": 672.4489,
+          "property_type": "NONE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E24",
+      "sourceLocation": "L22||L4",
+      "targetLocation": "L23||L4",
+      "status": "INPUT",
+      "guard": "",
+      "update": "y=0",
+      "sync": "pub",
+      "select": "",
+      "nails": [
+        {
+          "x": 291.8479,
+          "y": 679.9381,
+          "property_type": "UPDATE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 224.64423,
+          "y": 691.8904,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E25",
+      "sourceLocation": "L22||L4",
+      "targetLocation": "L22||L5",
+      "status": "OUTPUT",
+      "guard": "",
+      "update": "",
+      "sync": "tea",
+      "select": "",
+      "nails": [
+        {
+          "x": 404.8451,
+          "y": 538.504,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E26",
+      "sourceLocation": "L22||L4",
+      "targetLocation": "L22||L5",
+      "status": "OUTPUT",
+      "guard": "y1>=4",
+      "update": "",
+      "sync": "cof",
+      "select": "",
+      "nails": [
+        {
+          "x": 428.9957,
+          "y": 608.78485,
+          "property_type": "GUARD",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 461.90585,
+          "y": 555.7136,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E27",
+      "sourceLocation": "L22||L4",
+      "targetLocation": "L20||L4",
+      "status": "OUTPUT",
+      "guard": "",
+      "update": "",
+      "sync": "coin",
+      "select": "",
+      "nails": [
+        {
+          "x": 354.14404,
+          "y": 443.6771,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E28",
+      "sourceLocation": "L20||L4",
+      "targetLocation": "L22||L4",
+      "status": "INPUT",
+      "guard": "",
+      "update": "x=0",
+      "sync": "grant",
+      "select": "",
+      "nails": [
+        {
+          "x": 379.28085,
+          "y": 392.9418,
+          "property_type": "UPDATE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 393.892,
+          "y": 487.50143,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E29",
+      "sourceLocation": "L20||L4",
+      "targetLocation": "L21||L4",
+      "status": "INPUT",
+      "guard": "",
+      "update": "y=0",
+      "sync": "pub",
+      "select": "",
+      "nails": [
+        {
+          "x": 296.34726,
+          "y": 292.2354,
+          "property_type": "UPDATE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 225.16495,
+          "y": 306.98468,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E30",
+      "sourceLocation": "L20||L4",
+      "targetLocation": "L20||L5",
+      "status": "OUTPUT",
+      "guard": "",
+      "update": "",
+      "sync": "tea",
+      "select": "",
+      "nails": [
+        {
+          "x": 372.2171,
+          "y": 214.74226,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E31",
+      "sourceLocation": "L20||L4",
+      "targetLocation": "L20||L5",
+      "status": "OUTPUT",
+      "guard": "y1>=4",
+      "update": "",
+      "sync": "cof",
+      "select": "",
+      "nails": [
+        {
+          "x": 412.11398,
+          "y": 249.64427,
+          "property_type": "GUARD",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 434.87582,
+          "y": 176.12274,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E32",
+      "sourceLocation": "L21||L5",
+      "targetLocation": "L23||L5",
+      "status": "INPUT",
+      "guard": "",
+      "update": "x=0",
+      "sync": "grant",
+      "select": "",
+      "nails": [
+        {
+          "x": 213.99042,
+          "y": 252.3798,
+          "property_type": "UPDATE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 204.46593,
+          "y": 354.88574,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E33",
+      "sourceLocation": "L21||L5",
+      "targetLocation": "L21||L5",
+      "status": "INPUT",
+      "guard": "",
+      "update": "",
+      "sync": "pub",
+      "select": "",
+      "nails": [
+        {
+          "x": 164.56497,
+          "y": 140.44043,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 165.46713,
+          "y": 97.20172,
+          "property_type": "NONE",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E34",
+      "sourceLocation": "L21||L5",
+      "targetLocation": "L21||L5",
+      "status": "OUTPUT",
+      "guard": "y1>=2",
+      "update": "",
+      "sync": "tea",
+      "select": "",
+      "nails": [
+        {
+          "x": 240.41415,
+          "y": 141.88684,
+          "property_type": "GUARD",
+          "property_x": 10.0,
+          "property_y": -10.0
+        },
+        {
+          "x": 218.86386,
+          "y": 107.67821,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    },
+    {
+      "id": "E35",
+      "sourceLocation": "L21||L5",
+      "targetLocation": "L20||L5",
+      "status": "OUTPUT",
+      "guard": "",
+      "update": "",
+      "sync": "patent",
+      "select": "",
+      "nails": [
+        {
+          "x": 320.6548,
+          "y": 148.1359,
+          "property_type": "SYNCHRONIZATION",
+          "property_x": 10.0,
+          "property_y": -10.0
+        }
+      ]
+    }
+  ],
+  "description": "",
+  "include_in_periodic_check": false,
+  "color": "6",
+  "x": -287.2428,
+  "y": -387.20724,
+  "width": 574.4856,
+  "height": 774.4145
+}
