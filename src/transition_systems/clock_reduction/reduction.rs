@@ -46,7 +46,7 @@ pub fn clock_reduce(
             if clock_group.len() < 2 {
                 return None;
             }
-            return Some(clock_group);
+            Some(clock_group)
         })
         .collect();
 

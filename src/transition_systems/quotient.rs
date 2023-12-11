@@ -392,9 +392,9 @@ impl TransitionSystem for Quotient {
 
     fn remove_clocks(
         &mut self,
-        clocks: &Vec<ClockIndex>,
-        shrink_expand_src: &Vec<bool>,
-        shrink_expand_dst: &Vec<bool>,
+        clocks: &[ClockIndex],
+        shrink_expand_src: &[bool],
+        shrink_expand_dst: &[bool],
     ) -> Result<(), String> {
         let clocks_less = clocks.partition_point(|clock| clock < &self.quotient_clock_index);
         self.quotient_clock_index -= clocks_less;

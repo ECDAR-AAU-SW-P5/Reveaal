@@ -219,12 +219,15 @@ impl TransitionSystem for CompiledComponent {
 
     fn remove_clocks(
         &mut self,
-        clocks: &Vec<ClockIndex>,
-        shrink_expand_src: &Vec<bool>,
-        shrink_expand_dst: &Vec<bool>,
+        clocks: &[ClockIndex],
+        shrink_expand_src: &[bool],
+        shrink_expand_dst: &[bool],
     ) -> Result<(), String> {
         // Remove clock from Declarations
         self.comp_info.declarations.remove_clocks(clocks);
+
+        let shrink_expand_src = &shrink_expand_src.to_vec();
+        let shrink_expand_dst = &shrink_expand_dst.to_vec();
         // Remove clock from Locations
         for loc in self.locations.values_mut() {
             // Remove from Invariant

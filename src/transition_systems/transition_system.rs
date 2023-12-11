@@ -171,9 +171,9 @@ pub trait TransitionSystem: DynClone {
     /// Assumes clocks are in order such as [1, 3, 4, 5]
     fn remove_clocks(
         &mut self,
-        clocks: &Vec<ClockIndex>,
-        shrink_expand_src: &Vec<bool>,
-        shrink_expand_dst: &Vec<bool>,
+        clocks: &[ClockIndex],
+        shrink_expand_src: &[bool],
+        shrink_expand_dst: &[bool],
     ) -> Result<(), String>;
 
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String>;
