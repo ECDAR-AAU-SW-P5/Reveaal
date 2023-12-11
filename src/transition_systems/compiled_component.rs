@@ -274,11 +274,34 @@ impl TransitionSystem for CompiledComponent {
             }
         }
 
-        self.dim -= clocks.len();
-
         // Rebuild max bounds
-        let b = Bounds::new(self.dim);
-        self.comp_info.max_bounds = ... ;//todo
+        let mut b = Bounds::new(self.dim - clocks.len());
+        let mut j = 0;
+        for i in 0..self.dim {
+            if clocks.contains(&i) {
+                continue;
+            }
+            match self.comp_info.max_bounds.get_upper(i) {
+                None => {}
+                Some(bound) => {
+                    if bound > 0 {
+                        b.add_upper(j, bound);
+                    }
+                }
+            }
+            match self.comp_info.max_bounds.get_lower(i) {
+                None => {}
+                Some(bound) => {
+                    if bound > 0 {
+                        b.add_lower(j, bound);
+                    }
+                }
+            }
+            j += 1;
+        }
+        self.comp_info.max_bounds = b;
+
+        self.dim -= clocks.len();
 
         Ok(())
     }
