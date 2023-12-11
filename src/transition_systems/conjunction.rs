@@ -7,6 +7,7 @@ use crate::transition_systems::{
     CompositionType, LocationTree, TransitionSystem, TransitionSystemPtr,
 };
 use std::collections::hash_set::HashSet;
+use std::rc::Rc;
 
 use super::common::ComposedTransitionSystem;
 
@@ -73,7 +74,7 @@ impl Conjunction {
 }
 
 impl ComposedTransitionSystem for Conjunction {
-    fn next_transitions(&self, location: &LocationTree, action: &str) -> Vec<Transition> {
+    fn next_transitions(&self, location: Rc<LocationTree>, action: &str) -> Vec<Transition> {
         assert!(self.actions_contain(action));
 
         let loc_left = location.get_left();

@@ -11,7 +11,12 @@ use crate::{
 };
 use dyn_clone::{clone_trait_object, DynClone};
 use edbm::util::{bounds::Bounds, constraints::ClockIndex};
+use std::collections::hash_map::Entry;
 use std::collections::hash_set::HashSet;
+use std::collections::vec_deque::VecDeque;
+use std::collections::{hash_set::HashSet, HashMap};
+use std::hash::Hash;
+use std::rc::Rc;
 
 pub type TransitionSystemPtr = Box<dyn TransitionSystem>;
 pub type Action = String;
@@ -64,7 +69,7 @@ pub trait TransitionSystem: DynClone {
 
     fn next_transitions_if_available(
         &self,
-        location: &LocationTree,
+        location: Rc<LocationTree>,
         action: &str,
     ) -> Vec<Transition> {
         if self.actions_contain(action) {
@@ -74,14 +79,14 @@ pub trait TransitionSystem: DynClone {
         }
     }
 
-    fn next_transitions(&self, location: &LocationTree, action: &str) -> Vec<Transition>;
+    fn next_transitions(&self, location: Rc<LocationTree>, action: &str) -> Vec<Transition>;
 
-    fn next_outputs(&self, location: &LocationTree, action: &str) -> Vec<Transition> {
+    fn next_outputs(&self, location: Rc<LocationTree>, action: &str) -> Vec<Transition> {
         debug_assert!(self.get_output_actions().contains(action));
         self.next_transitions(location, action)
     }
 
-    fn next_inputs(&self, location: &LocationTree, action: &str) -> Vec<Transition> {
+    fn next_inputs(&self, location: Rc<LocationTree>, action: &str) -> Vec<Transition> {
         debug_assert!(self.get_input_actions().contains(action));
         self.next_transitions(location, action)
     }
@@ -104,14 +109,14 @@ pub trait TransitionSystem: DynClone {
         self.get_actions().contains(action)
     }
 
-    fn get_initial_location(&self) -> Option<LocationTree>;
+    fn get_initial_location(&self) -> Option<Rc<LocationTree>>;
 
     /// Function to get all locations from a [`TransitionSystem`]
     /// #### Warning
     /// This function utilizes a lot of memory. Use with caution
-    fn get_all_locations(&self) -> Vec<LocationTree>;
+    fn get_all_locations(&self) -> Vec<Rc<LocationTree>>;
 
-    fn get_location(&self, id: &LocationID) -> Option<LocationTree> {
+    fn get_location(&self, id: &LocationID) -> Option<Rc<LocationTree>> {
         self.get_all_locations()
             .iter()
             .find(|loc| loc.id == *id)
@@ -176,7 +181,8 @@ pub trait TransitionSystem: DynClone {
         shrink_expand_dst: &[bool],
     ) -> Result<(), String>;
 
-    fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String>;
+    fn construct_location_tree(&self, target: SpecificLocation)
+        -> Result<Rc<LocationTree>, String>;
 }
 
 /// Returns a [`TransitionSystemPtr`] equivalent to a `composition` of some `components`.

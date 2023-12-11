@@ -1,46 +1,54 @@
 use edbm::zones::OwnedFederation;
 
 use crate::transition_systems::{LocationTree, TransitionSystemPtr};
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt::{Display, Formatter},
+    rc::Rc,
+};
 
 #[derive(Clone, Debug)]
 pub struct StatePair {
-    pub locations1: LocationTree,
-    pub locations2: LocationTree,
-    /// The sentinel (Option) allows us to take ownership of the internal fed from a mutable reference
-    zone_sentinel: Option<OwnedFederation>,
+    pub locations1: Rc<LocationTree>,
+    pub locations2: Rc<LocationTree>,
+    zone: Rc<OwnedFederation>,
 }
 
 impl StatePair {
     pub fn from_locations(
         dimensions: usize,
-        locations1: LocationTree,
-        locations2: LocationTree,
+        locations1: Rc<LocationTree>,
+        locations2: Rc<LocationTree>,
     ) -> StatePair {
-        let zone = OwnedFederation::init(dimensions);
+        let mut zone = OwnedFederation::init(dimensions);
+
+        zone = locations1.apply_invariants(zone);
+        zone = locations2.apply_invariants(zone);
 
         StatePair {
             locations1,
             locations2,
-            zone_sentinel: Some(zone),
+            zone: Rc::new(zone),
         }
     }
 
-    pub fn get_locations1(&self) -> &LocationTree {
-        &self.locations1
-    }
-
-    pub fn get_locations2(&self) -> &LocationTree {
-        &self.locations2
-    }
-
-    //Used to allow borrowing both states as mutable
-    pub fn get_mut_states(&mut self, is_states1: bool) -> (&mut LocationTree, &mut LocationTree) {
-        if is_states1 {
-            (&mut self.locations1, &mut self.locations2)
-        } else {
-            (&mut self.locations2, &mut self.locations1)
+    pub fn new(
+        locations1: Rc<LocationTree>,
+        locations2: Rc<LocationTree>,
+        zone: Rc<OwnedFederation>,
+    ) -> Self {
+        StatePair {
+            locations1,
+            locations2,
+            zone,
         }
+    }
+
+    pub fn get_locations1(&self) -> Rc<LocationTree> {
+        self.locations1.clone()
+    }
+
+    pub fn get_locations2(&self) -> Rc<LocationTree> {
+        self.locations2.clone()
     }
 
     pub fn get_locations(&self, is_states1: bool) -> (&LocationTree, &LocationTree) {
@@ -52,19 +60,15 @@ impl StatePair {
     }
 
     pub fn clone_zone(&self) -> OwnedFederation {
-        self.ref_zone().clone()
+        self.zone.as_ref().clone()
     }
 
     pub fn ref_zone(&self) -> &OwnedFederation {
-        self.zone_sentinel.as_ref().unwrap()
+        self.zone.as_ref()
     }
 
-    pub fn take_zone(&mut self) -> OwnedFederation {
-        self.zone_sentinel.take().unwrap()
-    }
-
-    pub fn set_zone(&mut self, zone: OwnedFederation) {
-        self.zone_sentinel = Some(zone);
+    pub fn get_zone(&self) -> Rc<OwnedFederation> {
+        Rc::clone(&self.zone)
     }
 
     pub fn extrapolate_max_bounds(
@@ -72,10 +76,10 @@ impl StatePair {
         sys1: &TransitionSystemPtr,
         sys2: &TransitionSystemPtr,
     ) {
-        let mut bounds = sys1.get_local_max_bounds(&self.locations1);
-        bounds.add_bounds(&sys2.get_local_max_bounds(&self.locations2));
-        let zone = self.take_zone().extrapolate_max_bounds(&bounds);
-        self.set_zone(zone);
+        let mut bounds = sys1.get_local_max_bounds(self.locations1.as_ref());
+        bounds.add_bounds(&sys2.get_local_max_bounds(self.locations2.as_ref()));
+
+        self.zone = Rc::new(self.clone_zone().extrapolate_max_bounds(&bounds));
     }
 }
 
