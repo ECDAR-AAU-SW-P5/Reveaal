@@ -172,7 +172,8 @@ pub trait TransitionSystem: DynClone {
     fn remove_clocks(
         &mut self,
         clocks: &Vec<ClockIndex>,
-        shrink_expand: &Vec<bool>,
+        shrink_expand_src: &Vec<bool>,
+        shrink_expand_dst: &Vec<bool>,
     ) -> Result<(), String>;
 
     /// Assumes that no clock is remapped to itself and that a clock is replaced with an existing clock such that they become equal

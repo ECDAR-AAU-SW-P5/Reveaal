@@ -46,16 +46,15 @@ impl Declarations {
     }
 
     pub fn remove_clocks(&mut self, clocks_to_be_removed: &Vec<ClockIndex>) {
-        let mut clock_count = *self.clocks.values().next().unwrap_or(&(1usize));
         let mut new_clocks: HashMap<String, ClockIndex> = HashMap::new();
 
-        for (name, _) in self
+        for (name, old_clock) in self
             .clocks
             .iter()
             .filter(|(_, c)| !clocks_to_be_removed.contains(c))
         {
-            new_clocks.insert(name.clone(), clock_count);
-            clock_count += 1;
+            let clocks_less = clocks_to_be_removed.partition_point(|clock| clock < old_clock);
+            new_clocks.insert(name.clone(), *old_clock - clocks_less);
         }
 
         self.clocks = new_clocks;

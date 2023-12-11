@@ -41,14 +41,16 @@ pub fn clock_reduce(
     let l_count = get_count(&l_remove_clocks, &l_combine_clocks);
     let r_count = get_count(&r_remove_clocks, &r_combine_clocks);
 
+    let shrink_expand_src = vec![true; *dim + 1];
+
     debug!("Clocks to be reduced: {l_count:?} + {r_count:?}");
-    *dim -= r_remove_clocks.len(); //l_count;
+    *dim -= l_remove_clocks.len(); //l_count;
     debug!("New dimension: {dim}");
 
     if !l_remove_clocks.is_empty() {
         let l_shrink_expand = create_shrink_expand(&l_remove_clocks, &lhs.get_dim());
 
-        lhs.remove_clocks(&l_remove_clocks, &l_shrink_expand)
+        lhs.remove_clocks(&l_remove_clocks, &shrink_expand_src, &l_shrink_expand)
             .unwrap();
         //todo remap replace_clocks. Example: combine_clock { {2,3,4} } and remove_clock { 1 } will modify combine_clock into { {1, 2, 3 } }
     }
@@ -56,9 +58,9 @@ pub fn clock_reduce(
         //lhs.combine_clocks(&l_combine_clocks).unwrap(); todo
     }
     if !r_remove_clocks.is_empty() {
-        let r_shrink_expand = create_shrink_expand(&r_remove_clocks, &rhs.get_dim());
+        let r_shrink_expand = create_shrink_expand(&l_remove_clocks, &rhs.get_dim());
 
-        rhs.remove_clocks(&r_remove_clocks, &r_shrink_expand)
+        rhs.remove_clocks(&l_remove_clocks, &shrink_expand_src, &r_shrink_expand)
             .unwrap();
         //todo remap replace_clocks. Example: combine_clock { {2,3,4} } and remove_clock { 1 } will modify combine_clock into { {1, 2, 3 } }
     }
@@ -110,13 +112,17 @@ fn clock_reduce_single(
     let remove_clocks = remove_clocks.iter().sorted().copied().collect();
 
     let clock_count: usize = get_count(&remove_clocks, &combine_clocks);
+
+    let shrink_expand_src = vec![true; *dim + 1];
+
     debug!("Clocks to be reduced: {clock_count:?}");
     *dim -= remove_clocks.len(); //clock_count; todo
     debug!("New dimension: {dim}");
     if !remove_clocks.is_empty() {
         let shrink_expand = create_shrink_expand(&remove_clocks, &sys.get_dim());
 
-        sys.remove_clocks(&remove_clocks, &shrink_expand).unwrap();
+        sys.remove_clocks(&remove_clocks, &shrink_expand_src, &shrink_expand)
+            .unwrap();
         //todo remap replace_clocks. Example: combine_clock { {2,3,4} } and remove_clock { 1 } will modify combine_clock into { {1, 2, 3 } }
     }
     if !combine_clocks.is_empty() {

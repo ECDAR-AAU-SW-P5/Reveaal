@@ -220,7 +220,8 @@ impl TransitionSystem for CompiledComponent {
     fn remove_clocks(
         &mut self,
         clocks: &Vec<ClockIndex>,
-        shrink_expand: &Vec<bool>,
+        shrink_expand_src: &Vec<bool>,
+        shrink_expand_dst: &Vec<bool>,
     ) -> Result<(), String> {
         // Remove clock from Declarations
         self.comp_info.declarations.remove_clocks(clocks);
@@ -230,7 +231,11 @@ impl TransitionSystem for CompiledComponent {
             match &loc.invariant {
                 None => {}
                 Some(federation) => {
-                    loc.invariant = Some(federation.shrink_expand(shrink_expand, shrink_expand).0);
+                    loc.invariant = Some(
+                        federation
+                            .shrink_expand(shrink_expand_src, shrink_expand_dst)
+                            .0,
+                    );
                 }
             }
         }
@@ -240,7 +245,8 @@ impl TransitionSystem for CompiledComponent {
             Some(location) => match &mut location.invariant {
                 None => {}
                 Some(fed) => {
-                    location.invariant = Some(fed.shrink_expand(shrink_expand, shrink_expand).0);
+                    location.invariant =
+                        Some(fed.shrink_expand(shrink_expand_src, shrink_expand_dst).0);
                 }
             },
         }
@@ -250,7 +256,7 @@ impl TransitionSystem for CompiledComponent {
                 // Remove clock from Guard
                 transition.guard_zone = transition
                     .guard_zone
-                    .shrink_expand(shrink_expand, shrink_expand)
+                    .shrink_expand(shrink_expand_src, shrink_expand_dst)
                     .0;
 
                 // Remove clock from Update
@@ -268,7 +274,7 @@ impl TransitionSystem for CompiledComponent {
                     None => {}
                     Some(fed) => {
                         transition.target_locations.invariant =
-                            Some(fed.shrink_expand(shrink_expand, shrink_expand).0);
+                            Some(fed.shrink_expand(shrink_expand_src, shrink_expand_dst).0);
                     }
                 }
             }
