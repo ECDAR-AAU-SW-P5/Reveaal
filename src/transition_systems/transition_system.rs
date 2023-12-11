@@ -11,11 +11,7 @@ use crate::{
 };
 use dyn_clone::{clone_trait_object, DynClone};
 use edbm::util::{bounds::Bounds, constraints::ClockIndex};
-use std::collections::hash_map::Entry;
 use std::collections::hash_set::HashSet;
-use std::collections::vec_deque::VecDeque;
-use std::collections::{hash_set::HashSet, HashMap};
-use std::hash::Hash;
 use std::rc::Rc;
 
 pub type TransitionSystemPtr = Box<dyn TransitionSystem>;

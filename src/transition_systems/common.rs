@@ -148,7 +148,10 @@ impl<T: ComposedTransitionSystem> TransitionSystem for T {
         Ok(())
     }
 
-    fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String> {
+    fn construct_location_tree(
+        &self,
+        target: SpecificLocation,
+    ) -> Result<Rc<LocationTree>, String> {
         let (left, right) = self.get_children();
         let (t_left, t_right) = target.split();
         let loc_l = left.construct_location_tree(t_left)?;

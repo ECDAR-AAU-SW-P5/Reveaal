@@ -5,6 +5,7 @@ use itertools::Itertools;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::Hash;
+use std::rc::Rc;
 
 #[derive(Debug)]
 pub struct ClockAnalysisGraph {
@@ -165,7 +166,11 @@ impl ClockAnalysisGraph {
     ///Helper function to recursively traverse all transitions in a transitions system
     ///in order to find all transitions and location in the transition system, and
     ///saves these as [ClockAnalysisEdge]s and [ClockAnalysisNode]s in the [ClockAnalysisGraph]
-    fn find_edges_and_nodes(&mut self, system: &TransitionSystemPtr, init_location: LocationTree) {
+    fn find_edges_and_nodes(
+        &mut self,
+        system: &TransitionSystemPtr,
+        init_location: Rc<LocationTree>,
+    ) {
         let mut worklist = VecDeque::from([init_location]);
         let actions = system.get_actions();
         while let Some(location) = worklist.pop_front() {
@@ -189,7 +194,8 @@ impl ClockAnalysisGraph {
 
             //Constructs an edge to represent each transition from this graph and add it to the graph.
             for action in &actions {
-                for transition in system.next_transitions_if_available(&location, action) {
+                for transition in system.next_transitions_if_available(Rc::clone(&location), action)
+                {
                     let mut edge = ClockAnalysisEdge {
                         from: location.id.get_unique_string(),
                         to: transition.target_locations.id.get_unique_string(),

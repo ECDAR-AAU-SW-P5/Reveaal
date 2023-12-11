@@ -242,7 +242,7 @@ impl TransitionSystem for CompiledComponent {
     }
 
     fn remove_clocks(
-        &mut self,
+        &mut self, // <- impl TransitionSystem for CompiledComponent
         clocks: &[ClockIndex],
         shrink_expand_src: &[bool],
         shrink_expand_dst: &[bool],
