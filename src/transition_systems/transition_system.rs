@@ -176,17 +176,6 @@ pub trait TransitionSystem: DynClone {
         shrink_expand_dst: &Vec<bool>,
     ) -> Result<(), String>;
 
-    /// Assumes that no clock is remapped to itself and that a clock is replaced with an existing clock such that they become equal
-    ///
-    /// # Example
-    /// remap 2->1, 3->1, 10->4, 6->9, 8 -> 11 and quotient 9 -> 7 and clock 5 exists, but isn't remapped
-    /// - 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11    (initial)
-    /// - 1, 1, 1, 4, 5, 9, 7, 11, 7, 4, 11    (remapped)
-    /// - 1, 1, 1, 4, 4, 5, 7, 9, 9, 11, 11    (sorted)
-    /// - 1, 1, 1, 2, 2, 3, 4, 5, 5, 6, 6      (redrawn)
-    /// - 1, 2, 3, 4, 5, 6                     (no duplicates)
-    fn combine_clocks(&mut self, clocks: &Vec<HashSet<ClockIndex>>) -> Result<(), String>;
-
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String>;
 }
 

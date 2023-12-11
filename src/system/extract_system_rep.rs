@@ -62,7 +62,7 @@ pub fn create_executable_query<'a>(
                 let mut right_ts = right.compile_with_index(dim, &mut component_index)?;
 
                 if !component_loader.get_settings().disable_clock_reduction {
-                    clock_reduce(&mut left_ts, Some(&mut right_ts), &mut dim, quotient_index)?;
+                    clock_reduce(&mut left_ts, Some(&mut right_ts), &mut dim, quotient_index);
                 }
 
                 Ok(Box::new(RefinementExecutor {
@@ -107,7 +107,7 @@ pub fn create_executable_query<'a>(
                 let mut transition_system = recipe.compile(dim)?;
 
                 if !component_loader.get_settings().disable_clock_reduction {
-                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index)?;
+                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index);
                 }
 
                 Ok(Box::new(ConsistencyExecutor {
@@ -129,7 +129,7 @@ pub fn create_executable_query<'a>(
                 let mut transition_system = recipe.compile(dim)?;
 
                 if !component_loader.get_settings().disable_clock_reduction {
-                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index)?;
+                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index);
                 }
 
                 Ok(Box::new(DeterminismExecutor {
@@ -144,7 +144,7 @@ pub fn create_executable_query<'a>(
                 let mut transition_system = recipe.compile(dim)?;
 
                 if !component_loader.get_settings().disable_clock_reduction {
-                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index)?;
+                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index);
                 }
 
                 Ok(Box::new(GetComponentExecutor {
@@ -161,7 +161,7 @@ pub fn create_executable_query<'a>(
                 let mut transition_system = recipe.compile(dim)?;
 
                 if !component_loader.get_settings().disable_clock_reduction {
-                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index)?;
+                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index);
                 }
 
                 Ok(Box::new(GetComponentExecutor {

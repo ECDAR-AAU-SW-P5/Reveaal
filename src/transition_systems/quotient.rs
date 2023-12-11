@@ -406,28 +406,6 @@ impl TransitionSystem for Quotient {
         Ok(())
     }
 
-    fn combine_clocks(&mut self, clocks: &Vec<HashSet<ClockIndex>>) -> Result<(), String> {
-        todo!();
-        /*match clocks.get(&self.quotient_clock_index) {
-            None => {}
-            Some(clock) => {
-                self.quotient_clock_index = *clock;
-                self.decls.combine_clocks(clocks);
-            }
-        }
-        let clocks_less_or_equal = clocks
-            .keys()
-            .filter(|old_clock| old_clock < &&self.quotient_clock_index)
-            .count();
-        self.quotient_clock_index -= clocks_less_or_equal;
-
-        let (a, b) = self.get_children_mut();
-        a.combine_clocks(clocks)?;
-        b.combine_clocks(clocks)?;
-        self.dim = a.get_dim() + b.get_dim() + 1; // +1 for quotient
-        Ok(())*/
-    }
-
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String> {
         match target {
             SpecificLocation::BranchLocation(left, right, _) => {

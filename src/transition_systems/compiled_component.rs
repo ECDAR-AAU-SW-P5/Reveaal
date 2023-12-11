@@ -312,62 +312,6 @@ impl TransitionSystem for CompiledComponent {
         Ok(())
     }
 
-    fn combine_clocks(&mut self, clocks: &Vec<HashSet<ClockIndex>>) -> Result<(), String> {
-        todo!();
-        /*// Replace clock from Declarations
-        self.comp_info.declarations.combine_clocks(clocks);
-        // Replace clock from Locations
-        for loc in self.locations.values_mut() {
-            // Replace from Invariant
-            for (clock_to_be_replaced, new_clock) in clocks {
-                // todo: replace with replace_many
-                match &loc.invariant {
-                    None => {}
-                    Some(inv) => {
-                        loc.invariant = Some(remove_clock_from_federation(
-                            inv,
-                            clock_to_be_replaced,
-                            Some(new_clock),
-                        ));
-                    }
-                }
-            }
-        }
-        // Replace clock from Edges
-        for edge in self.location_edges.values_mut() {
-            for (_, transition) in edge.iter_mut() {
-                // todo: replace with replace_many
-                for (clock_to_be_replaced, new_clock) in clocks {
-                    // Replace clock from Guard
-                    transition.guard_zone = remove_clock_from_federation(
-                        &transition.guard_zone,
-                        clock_to_be_replaced,
-                        Some(new_clock),
-                    );
-                }
-
-                // Replace clock from Updates in Edge
-                transition.updates = transition
-                    .updates
-                    .iter()
-                    .map(|update| match clocks.get(&update.clock_index) {
-                        None => CompiledUpdate {
-                            clock_index: update.clock_index,
-                            value: update.value,
-                        },
-                        Some(clock) => CompiledUpdate {
-                            clock_index: *clock,
-                            value: update.value,
-                        },
-                    })
-                    .collect();
-            }
-        }
-
-        self.dim -= clocks.len();
-        Ok(())*/
-    }
-
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String> {
         match target {
             SpecificLocation::ComponentLocation { comp, location_id } => {

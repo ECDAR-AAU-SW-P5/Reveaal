@@ -1,6 +1,7 @@
 use crate::transition_systems::compiled_update::CompiledUpdate;
 use crate::transition_systems::{LocationTree, TransitionSystemPtr};
 use edbm::util::constraints::ClockIndex;
+use itertools::Itertools;
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::Hash;
@@ -30,7 +31,7 @@ pub struct ClockAnalysisEdge {
 /// Main way to use ClockAnalysisGraph
 pub fn find_redundant_clocks(
     system: &TransitionSystemPtr,
-) -> (HashSet<ClockIndex>, Vec<HashSet<ClockIndex>>) {
+) -> (Vec<ClockIndex>, Vec<HashSet<ClockIndex>>) {
     ClockAnalysisGraph::from_system(system).find_clock_redundancies()
 }
 
@@ -51,14 +52,15 @@ impl ClockAnalysisGraph {
         }
     }
 
-    pub fn find_clock_redundancies(self) -> (HashSet<ClockIndex>, Vec<HashSet<ClockIndex>>) {
+    pub fn find_clock_redundancies(self) -> (Vec<ClockIndex>, Vec<HashSet<ClockIndex>>) {
         //First we find the used clocks
         let used_clocks = self.find_used_clocks();
 
         //Then we instruct the caller to remove the unused clocks, we start at 1 since the 0 clock is not a real clock
         let unused_clocks = (1..self.dim)
             .filter(|clock| !used_clocks.contains(clock))
-            .collect::<HashSet<ClockIndex>>();
+            .sorted()
+            .collect::<Vec<ClockIndex>>();
 
         let equivalent_clock_groups = self.find_equivalent_clock_groups(&used_clocks);
 

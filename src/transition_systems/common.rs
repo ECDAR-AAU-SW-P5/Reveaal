@@ -147,15 +147,6 @@ impl<T: ComposedTransitionSystem> TransitionSystem for T {
         Ok(())
     }
 
-    fn combine_clocks(&mut self, clocks: &Vec<HashSet<ClockIndex>>) -> Result<(), String> {
-        let (left, right) = self.get_children_mut();
-        left.combine_clocks(clocks)?; // return if not ok
-        right.combine_clocks(clocks)?;
-        let new_dim = right.get_dim() + left.get_dim();
-        self.set_dim(new_dim);
-        Ok(())
-    }
-
     fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String> {
         let (left, right) = self.get_children();
         let (t_left, t_right) = target.split();
