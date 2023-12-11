@@ -104,7 +104,7 @@ impl TransitionID {
                 paths[component_index].push(
                     transition
                         .iter()
-                        .filter(|&id| !matches!(id, TransitionID::None))
+                        .filter(|id| !matches!(id, TransitionID::None))
                         .cloned()
                         .collect(),
                 );

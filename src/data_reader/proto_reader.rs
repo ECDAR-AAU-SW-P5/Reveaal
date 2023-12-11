@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::rc::Rc;
 
 use edbm::util::constraints::{Conjunction, Constraint, Disjunction, Inequality, RawInequality};
 use edbm::zones::OwnedFederation;
@@ -81,7 +82,7 @@ pub fn proto_state_to_state(state: ProtoState, system: &TransitionSystemPtr) -> 
 fn proto_location_tree_to_location_tree(
     location_tree: ProtoLocationTree,
     system: &TransitionSystemPtr,
-) -> LocationTree {
+) -> Rc<LocationTree> {
     let target: SpecificLocation = location_tree.into();
 
     system.construct_location_tree(target).unwrap()
@@ -164,7 +165,7 @@ mod tests {
 
     fn assert_state_equals(state1: &State, state2: &State) {
         assert!(
-            state1.zone_ref().equals(state2.zone_ref()),
+            state1.ref_zone().equals(state2.ref_zone()),
             "Zones are not equal"
         );
         assert_eq!(
@@ -216,7 +217,7 @@ mod tests {
                 return;
             }
             for action in system.get_actions() {
-                for t in system.next_transitions(&state.decorated_locations, &action) {
+                for t in system.next_transitions(Rc::clone(&state.decorated_locations), &action) {
                     let state = t.use_transition_alt(state);
                     if let Some(state) = state {
                         let next_state = convert_to_proto_and_back(&state, system);

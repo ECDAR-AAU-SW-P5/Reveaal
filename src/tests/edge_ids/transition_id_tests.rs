@@ -2,6 +2,7 @@
 mod reachability_transition_id_test {
     use std::collections::HashSet;
     use std::iter::FromIterator;
+    use std::rc::Rc;
 
     use crate::model_objects::expressions::SystemExpression;
     use crate::tests::reachability::helper_functions::reachability_test_helper_functions;
@@ -81,7 +82,7 @@ mod reachability_transition_id_test {
         );
         for loc in system.get_all_locations() {
             for ac in system.get_actions() {
-                for tran in system.next_transitions(&loc, &ac) {
+                for tran in system.next_transitions(Rc::clone(&loc), &ac) {
                     if expected_ids.contains(&tran.id) {
                         expected_ids.remove(&tran.id);
                     } else {

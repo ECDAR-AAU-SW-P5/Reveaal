@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use edbm::zones::OwnedFederation;
 use itertools::Itertools;
 
@@ -110,29 +112,29 @@ fn construct_location_tree(
     locations: &Vec<ComponentVariable>,
     machine: &SystemRecipe,
     system: &TransitionSystemPtr,
-) -> Result<LocationTree, String> {
+) -> Result<Rc<LocationTree>, String> {
     match machine {
         SystemRecipe::Composition(left, right) => {
             let (left_system, right_system) = system.get_children();
             Ok(LocationTree::compose(
-                &construct_location_tree(locations, left, left_system)?,
-                &construct_location_tree(locations, right, right_system)?,
+                construct_location_tree(locations, left, left_system)?,
+                construct_location_tree(locations, right, right_system)?,
                 CompositionType::Composition,
             ))
         }
         SystemRecipe::Conjunction(left, right) => {
             let (left_system, right_system) = system.get_children();
             Ok(LocationTree::compose(
-                &construct_location_tree(locations, left, left_system)?,
-                &construct_location_tree(locations, right, right_system)?,
+                construct_location_tree(locations, left, left_system)?,
+                construct_location_tree(locations, right, right_system)?,
                 CompositionType::Conjunction,
             ))
         }
         SystemRecipe::Quotient(left, right, ..) => {
             let (left_system, right_system) = system.get_children();
             Ok(LocationTree::merge_as_quotient(
-                &construct_location_tree(locations, left, left_system)?,
-                &construct_location_tree(locations, right, right_system)?,
+                construct_location_tree(locations, left, left_system)?,
+                construct_location_tree(locations, right, right_system)?,
             ))
         }
         SystemRecipe::Component(component) => {
