@@ -258,22 +258,26 @@ impl TransitionSystem for CompiledComponent {
             match &loc.invariant {
                 None => {}
                 Some(federation) => {
-                    loc.invariant = Some(
+                    let mut new_loc = loc.as_ref().clone();
+                    new_loc.invariant = Some(
                         federation
                             .shrink_expand(shrink_expand_src, shrink_expand_dst)
                             .0,
                     );
+                    *loc = Rc::new(new_loc);
                 }
             }
         }
         // Remove clock from initial location
         match &mut self.initial_location {
             None => {}
-            Some(location) => match &mut location.invariant {
+            Some(location) => match &location.invariant {
                 None => {}
                 Some(fed) => {
-                    location.invariant =
+                    let mut new_loc = location.as_ref().clone();
+                    new_loc.invariant =
                         Some(fed.shrink_expand(shrink_expand_src, shrink_expand_dst).0);
+                    *location = Rc::new(new_loc);
                 }
             },
         }
@@ -300,8 +304,12 @@ impl TransitionSystem for CompiledComponent {
                 match &transition.target_locations.invariant {
                     None => {}
                     Some(fed) => {
-                        transition.target_locations.invariant =
+                        let mut new_loc = transition.target_locations.as_ref().clone();
+
+                        new_loc.invariant =
                             Some(fed.shrink_expand(shrink_expand_src, shrink_expand_dst).0);
+
+                        transition.target_locations = Rc::new(new_loc);
                     }
                 }
             }
