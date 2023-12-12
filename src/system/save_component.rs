@@ -1,17 +1,17 @@
+use crate::model_objects::declarations::Declarations;
 use crate::model_objects::expressions::BoolExpression;
-use crate::model_objects::{Component, Declarations, Location, LocationType, SyncType};
+use crate::model_objects::Edge;
+use crate::model_objects::{Component, Location, LocationType, SyncType};
 use crate::transition_systems::{LocationTree, TransitionSystemPtr};
+use edbm::util::constraints::ClockIndex;
 use std::collections::HashMap;
 use std::rc::Rc;
+use PruningStrategy::*;
 
 pub enum PruningStrategy {
     Reachable,
     NoPruning,
 }
-
-use crate::model_objects::Edge;
-use edbm::util::constraints::ClockIndex;
-use PruningStrategy::*;
 
 pub fn combine_components(
     system: &TransitionSystemPtr,
@@ -73,7 +73,7 @@ pub fn get_locations_from_trees(
 
 pub fn get_clock_map(sysrep: &TransitionSystemPtr) -> HashMap<String, ClockIndex> {
     let mut clocks = HashMap::new();
-    let decls = sysrep.get_decls();
+    let decls = sysrep.get_all_system_decls();
 
     if decls.len() == 1 {
         return decls[0].clocks.clone();

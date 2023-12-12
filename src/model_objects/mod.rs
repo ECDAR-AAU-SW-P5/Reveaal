@@ -1,5 +1,6 @@
 mod component;
 mod decision;
+pub mod declarations;
 mod edge;
 pub mod expressions;
 mod location;
