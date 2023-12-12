@@ -280,22 +280,6 @@ pub enum ClockReductionInstruction {
     },
 }
 
-impl ClockReductionInstruction {
-    pub(crate) fn clocks_removed_count(&self) -> usize {
-        match self {
-            ClockReductionInstruction::RemoveClock { .. } => 1,
-            ClockReductionInstruction::ReplaceClocks { clock_indices, .. } => clock_indices.len(),
-        }
-    }
-
-    pub(crate) fn get_clock_index(&self) -> ClockIndex {
-        match self {
-            ClockReductionInstruction::RemoveClock { clock_index }
-            | ClockReductionInstruction::ReplaceClocks { clock_index, .. } => *clock_index,
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct ClockAnalysisNode {
     pub invariant_dependencies: HashSet<ClockIndex>,
@@ -425,7 +409,7 @@ impl ClockAnalysisGraph {
                     if let Some(group_id) = locally_equivalent_clock_groups.get(clock) {
                         ClockAnalysisGraph::get_or_insert(
                             &mut new_groups,
-                            group_offset + ((*group_id) as usize),
+                            group_offset + *group_id as usize,
                         )
                         .insert(*clock);
                     } else {

@@ -11,3 +11,4 @@ Cargo.lock
 *.DS_Store
 **/*.DS_Store
 
+/samples/json/EcdarUniversity/Components/test.json

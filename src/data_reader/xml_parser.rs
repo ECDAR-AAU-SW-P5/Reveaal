@@ -61,6 +61,7 @@ fn parse_xml<R: Read>(xml_data: R) -> (Vec<Component>, SystemDeclarations, Vec<Q
             ),
             edges,
             special_id: None,
+            clock_usages: Default::default(),
         };
         xml_components.push(comp);
     }

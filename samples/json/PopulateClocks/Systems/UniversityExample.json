@@ -1,0 +1,76 @@
+{
+  "name": "UniversityExample",
+  "description": "",
+  "x": 5.0,
+  "y": 5.0,
+  "width": 540.0,
+  "height": 410.0,
+  "color": "5",
+  "systemRootX": 240.0,
+  "componentInstances": [
+    {
+      "id": 1,
+      "componentName": "Machine",
+      "x": 10.0,
+      "y": 110.0
+    },
+    {
+      "id": 3,
+      "componentName": "Researcher",
+      "x": 310.0,
+      "y": 110.0
+    },
+    {
+      "id": 5,
+      "componentName": "HalfAdm1",
+      "x": 10.0,
+      "y": 280.0
+    },
+    {
+      "id": 6,
+      "componentName": "HalfAdm2",
+      "x": 310.0,
+      "y": 280.0
+    }
+  ],
+  "operators": [
+    {
+      "id": 2,
+      "type": "composition",
+      "x": 250.0,
+      "y": 60.0
+    },
+    {
+      "id": 4,
+      "type": "conjunction",
+      "x": 250.0,
+      "y": 230.0
+    }
+  ],
+  "edges": [
+    {
+      "child": 2,
+      "parent": 0
+    },
+    {
+      "child": 1,
+      "parent": 2
+    },
+    {
+      "child": 3,
+      "parent": 2
+    },
+    {
+      "child": 4,
+      "parent": 2
+    },
+    {
+      "child": 5,
+      "parent": 4
+    },
+    {
+      "child": 6,
+      "parent": 4
+    }
+  ]
+}
