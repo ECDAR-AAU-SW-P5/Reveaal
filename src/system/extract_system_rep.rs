@@ -49,10 +49,10 @@ pub fn create_executable_query<'a>(
             QueryExpression::Refinement(left_side, right_side) => {
                 let mut quotient_index = None;
 
-                let mut left =
+                let left =
                     get_system_recipe(left_side, component_loader, &mut dim, &mut quotient_index)
                         .unwrap();
-                let mut right =
+                let right =
                     get_system_recipe(right_side, component_loader, &mut dim, &mut quotient_index)
                         .unwrap();
 
@@ -133,7 +133,7 @@ pub fn create_executable_query<'a>(
             }
             QueryExpression::GetComponent(SaveExpression { system, name }) => {
                 let mut quotient_index = None;
-                let mut recipe =
+                let recipe =
                     get_system_recipe(system, component_loader, &mut dim, &mut quotient_index)
                         .unwrap();
 
@@ -145,7 +145,7 @@ pub fn create_executable_query<'a>(
             }
             QueryExpression::Prune(SaveExpression { system, name }) => {
                 let mut quotient_index = None;
-                let mut recipe =
+                let recipe =
                     get_system_recipe(system, component_loader, &mut dim, &mut quotient_index)
                         .unwrap();
 

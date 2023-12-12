@@ -692,7 +692,7 @@ mod tests {
     fn test_get_evaluated_int(comp_name: &str, expected: Vec<i32>) {
         let mut project_loader = JsonProjectLoader::new_loader(PATH, crate::tests::TEST_SETTINGS);
         project_loader.get_settings_mut().disable_clock_reduction = true;
-        let test_comp = project_loader.get_component(comp_name).clone();
+        let test_comp = project_loader.get_component(comp_name).unwrap().clone();
 
         let mut clock_values: Vec<i32> = Vec::new();
 
