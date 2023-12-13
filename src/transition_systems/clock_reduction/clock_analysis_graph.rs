@@ -146,7 +146,7 @@ impl ClockAnalysisGraph {
                 group_offset += (u32::MAX as usize) * 2;
             }
 
-            //Then we just have to take each of the values in the map and collect them into a vec
+            // Then we just have to take each of the values in the map and collect them into a vec
             equivalent_clock_groups = new_groups
                 .into_iter()
                 .map(|pair| pair.1)
