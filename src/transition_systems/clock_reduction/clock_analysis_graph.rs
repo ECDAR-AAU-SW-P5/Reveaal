@@ -98,11 +98,11 @@ impl ClockAnalysisGraph {
             return Vec::new();
         }
 
-        //This function works by maintaining the loop invariant that equivalent_clock_groups contains
-        //groups containing clocks where all clocks contained are equivalent in all edges we have iterated
-        //through. We also have to make sure that each clock are only present in one group at a time.
-        //This means that for the first iteration all clocks are equivalent. We do not include
-        //unused clocks since they are all equivalent and will removed completely in another stage.
+        // This function works by maintaining the loop invariant that equivalent_clock_groups contains
+        // groups containing clocks where all clocks contained are equivalent in all edges we have iterated
+        // through. We also have to make sure that each clock are only present in one group at a time.
+        // This means that for the first iteration all clocks are equivalent. We do not include
+        // unused clocks since they are all equivalent and will removed completely in another stage.
         let mut equivalent_clock_groups: Vec<HashSet<ClockIndex>> = vec![used_clocks.clone()];
 
         for edge in &self.edges {
