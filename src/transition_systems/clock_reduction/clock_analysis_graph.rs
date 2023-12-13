@@ -54,7 +54,7 @@ impl ClockAnalysisGraph {
     }
 
     pub fn find_clock_redundancies(self) -> (Vec<ClockIndex>, Vec<HashSet<ClockIndex>>) {
-        //First we find the used clocks
+        // First we find the used clocks
         let used_clocks = self.find_used_clocks();
 
         //Then we instruct the caller to remove the unused clocks, we start at 1 since the 0 clock is not a real clock
