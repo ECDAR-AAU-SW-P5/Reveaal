@@ -74,7 +74,7 @@ fn apply_constraints_to_state_helper(
 ///
 /// [replace_vars] converts [ArithExpression::VarName] to [ArithExpression::Clock] using [crate::model_objects::Component::get_declarations]
 ///
-/// [simplify] is simplifying of constants such as if 2 siblings are both integers for a given multiplication, addition etc. their parent node is replaced with an integer representing the operation.
+/// [simplify] is the simplification of constants. For example, if two siblings are both integers in a given multiplication, addition, etc., their parent node is replaced with an integer representing the operation.
 ///
 /// # Arguments
 ///
