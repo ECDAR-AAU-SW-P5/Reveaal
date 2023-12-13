@@ -174,7 +174,7 @@ impl ClockAnalysisGraph {
         let mut worklist = VecDeque::from([init_location]);
         let actions = system.get_actions();
         while let Some(location) = worklist.pop_front() {
-            //Constructs a node to represent this location and add it to the graph.
+            // Constructs a node to represent this location and add it to the graph.
             let mut node: ClockAnalysisNode = ClockAnalysisNode {
                 invariant_dependencies: HashSet::new(),
                 id: location.id.get_unique_string(),
