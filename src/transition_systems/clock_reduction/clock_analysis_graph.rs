@@ -192,7 +192,7 @@ impl ClockAnalysisGraph {
             }
             self.nodes.insert(node.id.clone(), node);
 
-            //Constructs an edge to represent each transition from this graph and add it to the graph.
+            // Constructs an edge to represent each transition from this graph and add it to the graph.
             for action in &actions {
                 for transition in system.next_transitions_if_available(Rc::clone(&location), action)
                 {
