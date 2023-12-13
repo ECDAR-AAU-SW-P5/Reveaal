@@ -122,12 +122,12 @@ impl ClockAnalysisGraph {
             let mut new_groups: HashMap<usize, HashSet<ClockIndex>> = HashMap::new();
             let mut group_offset: usize = u32::MAX as usize;
 
-            //For each of the existing clock groups we will remove the clocks from the groups
-            //that are locally equivalent, this means that each global group will now be
-            //updated to uphold the loop invariant.
-            //This is done by giving each globally equivalent clock group a group offset
-            //So all groups in the locally equivalent clock groups will be partitioned
-            //by the group they are in, in their globally equivalent group
+            // For each of the existing clock groups we will remove the clocks from the groups
+            // that are locally equivalent, this means that each global group will now be
+            // updated to uphold the loop invariant.
+            // This is done by giving each globally equivalent clock group a group offset
+            // So all groups in the locally equivalent clock groups will be partitioned
+            // by the group they are in, in their globally equivalent group
             for (old_group_index, equivalent_clock_group) in
                 equivalent_clock_groups.iter_mut().enumerate()
             {
