@@ -431,14 +431,16 @@ mod tests {
             let dim = component.declarations.clocks.len() + 1;
             let clock_reduced_compiled_component =
                 CompiledComponent::compile(component, dim, &mut 0).unwrap();
-            /*let decls = clock_reduced_compiled_component.get_component_decls();
+            /*
+            let decls = clock_reduced_compiled_component.get_component_decls();
 
             let a = HashSet::from([
                 *decls.get_clock_index_by_name("x").unwrap(),
                 *decls.get_clock_index_by_name("y").unwrap(),
                 *decls.get_clock_index_by_name("z").unwrap(),
             ]);
-            let combine_clocks = Vec::from([a]);*/
+            let combine_clocks = Vec::from([a]);
+            */
 
             // Act
             //clock_reduced_compiled_component.combine_clocks(&combine_clocks);
