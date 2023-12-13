@@ -57,7 +57,7 @@ impl ClockAnalysisGraph {
         // First we find the used clocks
         let used_clocks = self.find_used_clocks();
 
-        //Then we instruct the caller to remove the unused clocks, we start at 1 since the 0 clock is not a real clock
+        // Then we instruct the caller to remove the unused clocks. We start at 1 since the 0 clock is not a real clock
         let unused_clocks = (1..self.dim)
             .filter(|clock| !used_clocks.contains(clock))
             .sorted()
