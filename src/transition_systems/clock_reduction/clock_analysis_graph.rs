@@ -180,7 +180,7 @@ impl ClockAnalysisGraph {
                 id: location.id.get_unique_string(),
             };
 
-            //Finds clocks used in invariants in this location.
+            // Finds clocks used in invariants in this location.
             if let Some(invariant) = &location.invariant {
                 let conjunctions = invariant.minimal_constraints().conjunctions;
                 for conjunction in conjunctions {
