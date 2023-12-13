@@ -37,7 +37,7 @@ pub fn find_redundant_clocks(
 }
 
 impl ClockAnalysisGraph {
-    /// Constructs a [ClockAnalysisGraph] where nodes represents locations and Edges represent transitions
+    /// Constructs a [ClockAnalysisGraph] where nodes represent locations and edges represent transitions
     pub fn from_system(system: &TransitionSystemPtr) -> ClockAnalysisGraph {
         let mut graph: ClockAnalysisGraph = ClockAnalysisGraph::from_dim(system.get_dim());
         graph.find_edges_and_nodes(system, system.get_initial_location().unwrap());
