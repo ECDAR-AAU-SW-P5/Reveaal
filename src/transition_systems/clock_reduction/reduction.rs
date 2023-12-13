@@ -443,7 +443,7 @@ mod tests {
             */
 
             // Act
-            //clock_reduced_compiled_component.combine_clocks(&combine_clocks);
+            // clock_reduced_compiled_component.combine_clocks(&combine_clocks);
 
             // Assert
             let decls = clock_reduced_compiled_component.get_all_system_decls()[0];
