@@ -163,9 +163,9 @@ impl ClockAnalysisGraph {
         }
     }
 
-    ///Helper function to recursively traverse all transitions in a transitions system
-    ///in order to find all transitions and location in the transition system, and
-    ///saves these as [ClockAnalysisEdge]s and [ClockAnalysisNode]s in the [ClockAnalysisGraph]
+    /// Helper function to recursively traverse all transitions in a transitions system
+    /// in order to find all transitions and location in the transition system, and
+    /// saves these as [ClockAnalysisEdge]s and [ClockAnalysisNode]s in the [ClockAnalysisGraph]
     fn find_edges_and_nodes(
         &mut self,
         system: &TransitionSystemPtr,
