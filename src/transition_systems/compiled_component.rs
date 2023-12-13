@@ -5,6 +5,9 @@ use crate::system::query_failures::{
     ActionFailure, ConsistencyResult, DeterminismResult, SystemRecipeFailure,
 };
 use crate::system::specifics::SpecificLocation;
+use crate::transition_systems::clock_reduction::clock_removal::{
+    rebuild_bounds, remove_clocks_from_federation, remove_clocks_from_location,
+};
 use crate::transition_systems::{LocationTree, TransitionSystem, TransitionSystemPtr};
 use edbm::util::bounds::Bounds;
 use edbm::util::constraints::ClockIndex;
@@ -242,105 +245,58 @@ impl TransitionSystem for CompiledComponent {
     }
 
     fn remove_clocks(
-        &mut self, // <- impl TransitionSystem for CompiledComponent
+        &mut self,
         clocks: &[ClockIndex],
         shrink_expand_src: &[bool],
         shrink_expand_dst: &[bool],
     ) -> Result<(), String> {
-        // Remove clock from Declarations
+        // Remove clocks from Declarations
         self.comp_info.declarations.remove_clocks(clocks);
 
         let shrink_expand_src = &shrink_expand_src.to_vec();
         let shrink_expand_dst = &shrink_expand_dst.to_vec();
-        // Remove clock from Locations
+        // Remove clocks from Locations
         for loc in self.locations.values_mut() {
-            // Remove from Invariant
-            match &loc.invariant {
-                None => {}
-                Some(federation) => {
-                    let mut new_loc = loc.as_ref().clone();
-                    new_loc.invariant = Some(
-                        federation
-                            .shrink_expand(shrink_expand_src, shrink_expand_dst)
-                            .0,
-                    );
-                    *loc = Rc::new(new_loc);
-                }
-            }
+            remove_clocks_from_location(loc, clocks, shrink_expand_src, shrink_expand_dst);
         }
-        // Remove clock from initial location
-        match &mut self.initial_location {
-            None => {}
-            Some(location) => match &location.invariant {
-                None => {}
-                Some(fed) => {
-                    let mut new_loc = location.as_ref().clone();
-                    new_loc.invariant =
-                        Some(fed.shrink_expand(shrink_expand_src, shrink_expand_dst).0);
-                    *location = Rc::new(new_loc);
-                }
-            },
+        // Remove clocks from initial location
+        if let Some(loc) = &mut self.initial_location {
+            remove_clocks_from_location(loc, clocks, shrink_expand_src, shrink_expand_dst);
         }
-        // Remove clock from Edges
+        // Remove clocks from Edges
         for edge in self.location_edges.values_mut() {
             for (_, transition) in edge.iter_mut() {
-                // Remove clock from Guard
-                transition.guard_zone = transition
-                    .guard_zone
-                    .shrink_expand(shrink_expand_src, shrink_expand_dst)
-                    .0;
+                // Remove clocks from Guard
+                transition.guard_zone = remove_clocks_from_federation(
+                    transition.guard_zone.clone(),
+                    clocks,
+                    shrink_expand_src,
+                    shrink_expand_dst,
+                );
 
-                // Remove clock from Update
+                // Remove clocks from Updates
                 transition
                     .updates
                     .retain(|update| !clocks.contains(&update.clock_index));
 
+                //move clocks to the left in Updates
                 for update in &mut transition.updates {
                     let clocks_less = clocks.partition_point(|clock| clock < &update.clock_index);
                     update.clock_index -= clocks_less;
                 }
 
-                // Remove clock from target locations (supposedly they're not updated when iterating self.locations)
-                match &transition.target_locations.invariant {
-                    None => {}
-                    Some(fed) => {
-                        let mut new_loc = transition.target_locations.as_ref().clone();
-
-                        new_loc.invariant =
-                            Some(fed.shrink_expand(shrink_expand_src, shrink_expand_dst).0);
-
-                        transition.target_locations = Rc::new(new_loc);
-                    }
-                }
+                // Remove clocks from target locations (supposedly they're not updated when iterating self.locations)
+                remove_clocks_from_location(
+                    &mut transition.target_locations,
+                    clocks,
+                    shrink_expand_src,
+                    shrink_expand_dst,
+                );
             }
         }
 
         // Rebuild max bounds
-        let mut b = Bounds::new(self.dim - clocks.len());
-        let mut j = 0;
-        for i in 0..self.dim {
-            if clocks.contains(&i) {
-                continue;
-            }
-            match self.comp_info.max_bounds.get_upper(i) {
-                None => {}
-                Some(bound) => {
-                    if bound > 0 {
-                        b.add_upper(j, bound);
-                    }
-                }
-            }
-            match self.comp_info.max_bounds.get_lower(i) {
-                None => {}
-                Some(bound) => {
-                    if bound > 0 {
-                        b.add_lower(j, bound);
-                    }
-                }
-            }
-            j += 1;
-        }
-        self.comp_info.max_bounds = b;
+        self.comp_info.max_bounds = rebuild_bounds(&self.comp_info.max_bounds, self.dim, clocks);
 
         self.dim -= clocks.len();
 

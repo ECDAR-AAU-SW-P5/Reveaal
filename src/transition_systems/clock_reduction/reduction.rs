@@ -97,9 +97,7 @@ fn get_count(remove_clocks: &Vec<ClockIndex>, combine_clocks: &Vec<HashSet<Clock
 fn clock_reduce_single(sys: &mut TransitionSystemPtr, dim: &mut usize, quotient_clock: ClockIndex) {
     let (mut remove_clocks, mut combine_clocks) = find_redundant_clocks(sys);
 
-    if !remove_clocks.is_empty() {
-        remove_clocks.remove(quotient_clock);
-    }
+    remove_clocks.retain(|clock| clock != &quotient_clock);
     for clock_group in &mut combine_clocks {
         clock_group.remove(&quotient_clock);
     }
@@ -157,7 +155,7 @@ mod tests {
             clock_reduce(&mut system, None, &mut dim, None);
 
             // Assert
-            assert_eq!(dim, 1, "After removing the clocks, the dim should be 1");
+            assert_eq!(dim, 0, "After removing the clocks, the dim should be 0");
             assert!(
                 json_run_query(AG_PATH, "consistency: A").is_ok(),
                 "Component A should be consistent"
@@ -279,7 +277,7 @@ mod tests {
         }
 
         #[test]
-        #[ignore]
+        #[ignore] //replace clock test
         fn remove_clock() {
             // Arrange
             let (sr_component1, sr_component2, mut dimensions) = get_two_components(
