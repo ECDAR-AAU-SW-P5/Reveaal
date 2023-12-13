@@ -15,6 +15,7 @@ A model checking engine for ECDAR (Environment for Compositional Design and Anal
   - **Windows**: Download protobuf (https://github.com/protocolbuffers/protobuf/releases/) and add the bin folder to your PATH environment variable (https://www.computerhope.com/issues/ch000549.htm)
 
 ## Compiling and running
+- run `git submodule update --init --recursive` to fetch protobuf submodules
 - Build the project: `cargo build` / `cargo build --release`
 - Run the tests: `cargo test`
 - Example twin-Query: `cargo run -- query -e "consistency: (G17 && G6); refinement: (G17 && G6) <= G17" -i samples/xml/ConsTests.xml`
