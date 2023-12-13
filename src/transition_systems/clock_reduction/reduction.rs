@@ -155,7 +155,7 @@ mod tests {
             clock_reduce(&mut system, None, &mut dim, None);
 
             // Assert
-            assert_eq!(dim, 1, "After removing the clocks, the dim should be 1");
+            assert_eq!(dim, 0, "After removing the clocks, the dim should be 0");
             assert!(
                 json_run_query(AG_PATH, "consistency: A").is_ok(),
                 "Component A should be consistent"
@@ -277,7 +277,7 @@ mod tests {
         }
 
         #[test]
-        #[ignore]
+        #[ignore] //replace clock test
         fn remove_clock() {
             // Arrange
             let (sr_component1, sr_component2, mut dimensions) = get_two_components(
