@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::hash_set::Iter;
 use std::collections::{HashMap, HashSet};
 
-/// The declaration struct is used to hold the indices for each clock, and is meant to be the owner of int variables once implemented
+/// The declaration struct is used to hold the indices for each clock and is meant to be the owner of int variables once implemented
 #[derive(Debug, Deserialize, Clone, PartialEq, Eq, Serialize)]
 pub struct Declarations {
     pub ints: HashMap<String, i32>,
