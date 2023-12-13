@@ -117,8 +117,8 @@ impl ClockAnalysisGraph {
                 locally_equivalent_clock_groups.insert(update.clock_index, update.value as u32);
             }
 
-            //Then the locally equivalent clock groups will be combined with the globally equivalent
-            //clock groups to identify the new globally equivalent clocks
+            // Then the locally equivalent clock groups will be combined with the globally equivalent
+            // clock groups to identify the new globally equivalent clocks
             let mut new_groups: HashMap<usize, HashSet<ClockIndex>> = HashMap::new();
             let mut group_offset: usize = u32::MAX as usize;
 
