@@ -97,9 +97,7 @@ fn get_count(remove_clocks: &Vec<ClockIndex>, combine_clocks: &Vec<HashSet<Clock
 fn clock_reduce_single(sys: &mut TransitionSystemPtr, dim: &mut usize, quotient_clock: ClockIndex) {
     let (mut remove_clocks, mut combine_clocks) = find_redundant_clocks(sys);
 
-    if !remove_clocks.is_empty() && quotient_clock < remove_clocks.len() {
-        remove_clocks.remove(quotient_clock);
-    }
+    remove_clocks.retain(|clock| clock != &quotient_clock);
     for clock_group in &mut combine_clocks {
         clock_group.remove(&quotient_clock);
     }

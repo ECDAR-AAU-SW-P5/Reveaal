@@ -1,4 +1,5 @@
 use crate::transition_systems::LocationTree;
+use edbm::util::bounds::Bounds;
 use edbm::util::constraints::ClockIndex;
 use edbm::zones::OwnedFederation;
 use std::rc::Rc;
@@ -38,4 +39,31 @@ pub fn remove_clocks_from_location(
         ));
         *loc = Rc::new(new_loc);
     }
+}
+pub fn rebuild_bounds(old_bounds: &Bounds, dim: ClockIndex, clocks: &[ClockIndex]) -> Bounds {
+    let mut b = Bounds::new(dim - clocks.len());
+    let mut j = 0;
+    for i in 0..dim {
+        if clocks.contains(&i) {
+            continue;
+        }
+        match old_bounds.get_upper(i) {
+            None => {}
+            Some(bound) => {
+                if bound > 0 {
+                    b.add_upper(j, bound);
+                }
+            }
+        }
+        match old_bounds.get_lower(i) {
+            None => {}
+            Some(bound) => {
+                if bound > 0 {
+                    b.add_lower(j, bound);
+                }
+            }
+        }
+        j += 1;
+    }
+    b
 }
