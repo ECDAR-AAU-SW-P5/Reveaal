@@ -84,7 +84,7 @@ impl ClockAnalysisGraph {
             }
         }
 
-        //Clock index 0 is not a real clock therefore it is removed
+        // Clock index 0 is not a real clock. Therefore, it is removed
         used_clocks.remove(&0);
 
         used_clocks
