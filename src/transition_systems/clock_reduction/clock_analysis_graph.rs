@@ -106,10 +106,10 @@ impl ClockAnalysisGraph {
         let mut equivalent_clock_groups: Vec<HashSet<ClockIndex>> = vec![used_clocks.clone()];
 
         for edge in &self.edges {
-            //First the clocks which are equivalent in this edge are found. This is defined by every
-            //clock in their respective group are set to the same value. This is done in a HashMap
-            //where each clock group has their own unique u32, the clock indices
-            //with the same value are in the same group
+            // First the clocks which are equivalent in this edge are found. This is defined by every
+            // clock in their respective group are set to the same value. This is done in a HashMap
+            // where each clock group has their own unique u32, the clock indices
+            // with the same value are in the same group
             let mut locally_equivalent_clock_groups: HashMap<ClockIndex, u32> = HashMap::new();
 
             //Then we create the groups in the hashmap
