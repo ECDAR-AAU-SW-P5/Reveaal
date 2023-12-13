@@ -204,7 +204,7 @@ impl ClockAnalysisGraph {
                         edge_type: action.to_string(),
                     };
 
-                    //Finds clocks used in guards in this transition.
+                    // Finds clocks used in guards in this transition.
                     let conjunctions = transition.guard_zone.minimal_constraints().conjunctions;
                     for conjunction in &conjunctions {
                         for constraint in conjunction.iter() {
