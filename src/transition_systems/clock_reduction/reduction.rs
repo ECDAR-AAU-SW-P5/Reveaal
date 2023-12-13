@@ -76,7 +76,7 @@ fn create_shrink_expand(clocks: &Vec<ClockIndex>, dim: &usize) -> Vec<bool> {
     shrink_expand
 }
 
-// length of remove_clocks + all the clocks in each clock group - amount of clock groups.
+// Returns the length of remove_clocks + all the clocks in each clock group - amount of clock groups.
 fn get_count(remove_clocks: &Vec<ClockIndex>, combine_clocks: &Vec<HashSet<ClockIndex>>) -> usize {
     remove_clocks.len()
         + combine_clocks
