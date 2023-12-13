@@ -112,7 +112,7 @@ impl ClockAnalysisGraph {
             // with the same value are in the same group
             let mut locally_equivalent_clock_groups: HashMap<ClockIndex, u32> = HashMap::new();
 
-            //Then we create the groups in the hashmap
+            // Then we create the groups in the hashmap
             for update in edge.updates.iter() {
                 locally_equivalent_clock_groups.insert(update.clock_index, update.value as u32);
             }
