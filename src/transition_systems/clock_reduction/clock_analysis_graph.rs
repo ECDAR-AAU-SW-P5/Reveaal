@@ -71,7 +71,7 @@ impl ClockAnalysisGraph {
     fn find_used_clocks(&self) -> HashSet<ClockIndex> {
         let mut used_clocks = HashSet::new();
 
-        //First we find the used clocks
+        // First we find the used clocks
         for edge in &self.edges {
             for guard_dependency in &edge.guard_dependencies {
                 used_clocks.insert(*guard_dependency);
