@@ -4,6 +4,7 @@ use crate::model_objects::Transition;
 use crate::system::query_failures::{ActionFailure, SystemRecipeFailure};
 use crate::transition_systems::{LocationTree, TransitionSystem, TransitionSystemPtr};
 use std::collections::hash_set::HashSet;
+use std::rc::Rc;
 
 use super::common::ComposedTransitionSystem;
 use super::CompositionType;
@@ -75,7 +76,7 @@ impl Composition {
 }
 
 impl ComposedTransitionSystem for Composition {
-    fn next_transitions(&self, location: &LocationTree, action: &str) -> Vec<Transition> {
+    fn next_transitions(&self, location: Rc<LocationTree>, action: &str) -> Vec<Transition> {
         assert!(self.actions_contain(action));
 
         let loc_left = location.get_left();

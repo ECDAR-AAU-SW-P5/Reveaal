@@ -25,13 +25,13 @@ struct SubPath {
 
 fn is_trivially_unreachable(start_state: &State, end_state: &State) -> bool {
     // If any of the zones are empty
-    if start_state.zone_ref().is_empty() || end_state.zone_ref().is_empty() {
+    if start_state.ref_zone().is_empty() || end_state.ref_zone().is_empty() {
         return true;
     }
 
     // If the end location has invariants and these do not have an intersection (overlap) with the zone of the end state of the query
     if let Some(invariants) = end_state.decorated_locations.get_invariants() {
-        if !end_state.zone_ref().has_intersection(invariants) {
+        if !end_state.ref_zone().has_intersection(invariants) {
             return true;
         }
     }
@@ -115,7 +115,7 @@ fn reachability_search(
     // Push start state to visited state
     visited_states.insert(
         start_state.decorated_locations.id.clone(),
-        vec![start_state.zone_ref().clone()],
+        vec![start_state.ref_zone().clone()],
     );
 
     // Push initial state to frontier
@@ -125,7 +125,7 @@ fn reachability_search(
         transition: None,
     }));
 
-    let target_bounds = end_state.zone_ref().get_bounds();
+    let target_bounds = end_state.ref_zone().get_bounds();
 
     // Take the first state from the frontier and explore it
     while let Some(sub_path) = frontier_states.pop_front() {
@@ -134,9 +134,10 @@ fn reachability_search(
         }
 
         for action in &actions {
-            for transition in
-                &system.next_transitions(&sub_path.destination_state.decorated_locations, action)
-            {
+            for transition in &system.next_transitions(
+                Rc::clone(&sub_path.destination_state.decorated_locations),
+                action,
+            ) {
                 take_transition(
                     &sub_path,
                     transition,
@@ -156,8 +157,8 @@ fn reachability_search(
 fn reached_end_state(cur_state: &State, end_state: &State) -> bool {
     cur_state
         .decorated_locations
-        .compare_partial_locations(&end_state.decorated_locations)
-        && cur_state.zone_ref().has_intersection(end_state.zone_ref())
+        .compare_partial_locations(Rc::clone(&end_state.decorated_locations))
+        && cur_state.ref_zone().has_intersection(end_state.ref_zone())
 }
 
 fn take_transition(
@@ -177,14 +178,14 @@ fn take_transition(
         let new_location_id = &new_state.decorated_locations.id;
         let existing_zones = visited_states.entry(new_location_id.clone()).or_default();
         // If this location has not already been reached (explored) with a larger zone
-        if !zone_subset_of_existing_zones(new_state.zone_ref(), existing_zones) {
+        if !zone_subset_of_existing_zones(new_state.ref_zone(), existing_zones) {
             // Remove the smaller zones for this location in visited_states
-            remove_existing_subsets_of_zone(new_state.zone_ref(), existing_zones);
+            remove_existing_subsets_of_zone(new_state.ref_zone(), existing_zones);
             // Add the new zone to the list of zones for this location in visited_states
             visited_states
                 .get_mut(new_location_id)
                 .unwrap()
-                .push(new_state.zone_ref().clone());
+                .push(new_state.ref_zone().clone());
             // Add the new state to the frontier
             frontier_states.push_back(Rc::new(SubPath {
                 previous_sub_path: Some(Rc::clone(sub_path)),

@@ -2,6 +2,7 @@ use crate::model_objects::expressions::BoolExpression;
 use crate::model_objects::{Component, Declarations, Location, LocationType, SyncType};
 use crate::transition_systems::{LocationTree, TransitionSystemPtr};
 use std::collections::HashMap;
+use std::rc::Rc;
 
 pub enum PruningStrategy {
     Reachable,
@@ -28,7 +29,7 @@ pub fn combine_components(
         }
     };
 
-    let locations = get_locations_from_trees(&location_trees, &clocks);
+    let locations = get_locations_from_trees(location_trees.as_slice(), &clocks);
 
     Component {
         name: "".to_string(),
@@ -43,7 +44,7 @@ pub fn combine_components(
 }
 
 pub fn get_locations_from_trees(
-    location_trees: &[LocationTree],
+    location_trees: &[Rc<LocationTree>],
     clock_map: &HashMap<String, ClockIndex>,
 ) -> Vec<Location> {
     location_trees
@@ -92,20 +93,20 @@ pub fn get_clock_map(sysrep: &TransitionSystemPtr) -> HashMap<String, ClockIndex
 
 fn collect_all_edges_and_locations(
     representation: &TransitionSystemPtr,
-    locations: &mut Vec<LocationTree>,
+    locations: &mut Vec<Rc<LocationTree>>,
     edges: &mut Vec<Edge>,
     clock_map: &HashMap<String, ClockIndex>,
 ) {
     let l = representation.get_all_locations();
     locations.extend(l);
     for location in locations {
-        collect_edges_from_location(location, representation, edges, clock_map);
+        collect_edges_from_location(Rc::clone(location), representation, edges, clock_map);
     }
 }
 
 fn collect_reachable_edges_and_locations(
     representation: &TransitionSystemPtr,
-    locations: &mut Vec<LocationTree>,
+    locations: &mut Vec<Rc<LocationTree>>,
     edges: &mut Vec<Edge>,
     clock_map: &HashMap<String, ClockIndex>,
 ) {
@@ -118,17 +119,17 @@ fn collect_reachable_edges_and_locations(
 
     locations.push(l.clone());
 
-    collect_reachable_locations(&l, representation, locations);
+    collect_reachable_locations(l, representation, locations);
 
     for loc in locations {
-        collect_edges_from_location(loc, representation, edges, clock_map);
+        collect_edges_from_location(Rc::clone(loc), representation, edges, clock_map);
     }
 }
 
 fn collect_reachable_locations(
-    location: &LocationTree,
+    location: Rc<LocationTree>,
     representation: &TransitionSystemPtr,
-    locations: &mut Vec<LocationTree>,
+    locations: &mut Vec<Rc<LocationTree>>,
 ) {
     for input in [true, false].iter() {
         for sync in if *input {
@@ -136,15 +137,14 @@ fn collect_reachable_locations(
         } else {
             representation.get_output_actions()
         } {
-            let transitions = representation.next_transitions(location, &sync);
+            let transitions = representation.next_transitions(Rc::clone(&location), &sync);
 
             for transition in transitions {
-                let mut target_location = location.clone();
-                transition.move_locations(&mut target_location);
+                let target_location = transition.target_locations;
 
                 if !locations.contains(&target_location) {
-                    locations.push(target_location.clone());
-                    collect_reachable_locations(&target_location, representation, locations);
+                    locations.push(Rc::clone(&target_location));
+                    collect_reachable_locations(target_location, representation, locations);
                 }
             }
         }
@@ -152,17 +152,29 @@ fn collect_reachable_locations(
 }
 
 fn collect_edges_from_location(
-    location: &LocationTree,
+    location: Rc<LocationTree>,
     representation: &TransitionSystemPtr,
     edges: &mut Vec<Edge>,
     clock_map: &HashMap<String, ClockIndex>,
 ) {
-    collect_specific_edges_from_location(location, representation, edges, true, clock_map);
-    collect_specific_edges_from_location(location, representation, edges, false, clock_map);
+    collect_specific_edges_from_location(
+        Rc::clone(&location),
+        representation,
+        edges,
+        true,
+        clock_map,
+    );
+    collect_specific_edges_from_location(
+        Rc::clone(&location),
+        representation,
+        edges,
+        false,
+        clock_map,
+    );
 }
 
 fn collect_specific_edges_from_location(
-    location: &LocationTree,
+    location: Rc<LocationTree>,
     representation: &TransitionSystemPtr,
     edges: &mut Vec<Edge>,
     input: bool,
@@ -173,10 +185,9 @@ fn collect_specific_edges_from_location(
     } else {
         representation.get_output_actions()
     } {
-        let transitions = representation.next_transitions(location, &sync);
+        let transitions = representation.next_transitions(Rc::clone(&location), &sync);
         for transition in transitions {
-            let mut target_location = location.clone();
-            transition.move_locations(&mut target_location);
+            let target_location_id = transition.target_locations.id.to_string();
 
             let guard = transition.get_renamed_guard_expression(clock_map);
             if let Some(BoolExpression::Bool(false)) = guard {
@@ -186,7 +197,7 @@ fn collect_specific_edges_from_location(
             let edge = Edge {
                 id: transition.id.to_string(),
                 source_location: location.id.to_string(),
-                target_location: target_location.id.to_string(),
+                target_location: target_location_id,
                 sync_type: if input {
                     SyncType::Input
                 } else {

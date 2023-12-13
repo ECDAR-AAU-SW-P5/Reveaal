@@ -291,7 +291,7 @@ impl SpecificState {
         let locations = state_specific_location(state, sys);
         let clock_map = specific_clock_comp_map(sys);
 
-        let constraints = state.zone_ref().minimal_constraints();
+        let constraints = state.ref_zone().minimal_constraints();
         let constraints = SpecificDisjunction::from_disjunction(constraints, &clock_map);
         Self {
             locations,

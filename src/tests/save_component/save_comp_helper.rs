@@ -30,13 +30,15 @@ pub mod util {
                     &mut *comp_loader,
                     &mut dim,
                     &mut None,
-                ),
+                )
+                .unwrap(),
                 extract_system_rep::get_system_recipe(
                     &expr.system,
                     &mut *comp_loader,
                     &mut dim,
                     &mut None,
-                ),
+                )
+                .unwrap(),
             )
         } else {
             panic!("Failed to create system")

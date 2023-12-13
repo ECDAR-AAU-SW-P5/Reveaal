@@ -8,6 +8,7 @@ use crate::model_objects::{Component, Query, SystemDeclarations};
 use crate::protobuf_server::services;
 use crate::protobuf_server::services::query_request::Settings;
 use crate::system::input_enabler;
+use crate::system::query_failures::SyntaxResult;
 use crate::xml_parser;
 use std::collections::HashMap;
 use std::num::NonZeroUsize;
@@ -108,7 +109,7 @@ impl ModelCache {
 }
 
 pub trait ComponentLoader {
-    fn get_component(&mut self, component_name: &str) -> &Component;
+    fn get_component(&mut self, component_name: &str) -> Result<&Component, SyntaxResult>;
     fn save_component(&mut self, component: Component);
     fn get_settings(&self) -> &Settings;
     fn get_settings_mut(&mut self) -> &mut Settings;
@@ -121,10 +122,10 @@ pub struct ComponentContainer {
 }
 
 impl ComponentLoader for ComponentContainer {
-    fn get_component(&mut self, component_name: &str) -> &Component {
+    fn get_component(&mut self, component_name: &str) -> Result<&Component, SyntaxResult> {
         if let Some(component) = self.loaded_components.get(component_name) {
             assert_eq!(component_name, component.name);
-            component
+            Ok(component)
         } else {
             panic!("The component '{}' could not be retrieved", component_name);
         }
@@ -212,14 +213,14 @@ pub struct JsonProjectLoader {
 }
 
 impl ComponentLoader for JsonProjectLoader {
-    fn get_component(&mut self, component_name: &str) -> &Component {
+    fn get_component(&mut self, component_name: &str) -> Result<&Component, SyntaxResult> {
         if !self.is_component_loaded(component_name) {
-            self.load_component(component_name);
+            self.load_component(component_name)?;
         }
 
         if let Some(component) = self.loaded_components.get(component_name) {
             assert_eq!(component_name, component.name);
-            component
+            Ok(component)
         } else {
             panic!("The component '{}' could not be retrieved", component_name);
         }
@@ -275,8 +276,8 @@ impl JsonProjectLoader {
         })
     }
 
-    fn load_component(&mut self, component_name: &str) {
-        let mut component = json_reader::read_json_component(&self.project_path, component_name);
+    fn load_component(&mut self, component_name: &str) -> Result<(), SyntaxResult> {
+        let mut component = json_reader::read_json_component(&self.project_path, component_name)?;
 
         let opt_inputs = self
             .get_declarations()
@@ -287,6 +288,8 @@ impl JsonProjectLoader {
 
         self.loaded_components
             .insert(String::from(component_name), component);
+
+        Ok(())
     }
 
     fn is_component_loaded(&self, component_name: &str) -> bool {
@@ -303,10 +306,10 @@ pub struct XmlProjectLoader {
 }
 
 impl ComponentLoader for XmlProjectLoader {
-    fn get_component(&mut self, component_name: &str) -> &Component {
+    fn get_component(&mut self, component_name: &str) -> Result<&Component, SyntaxResult> {
         if let Some(component) = self.loaded_components.get(component_name) {
             assert_eq!(component_name, component.name);
-            component
+            Ok(component)
         } else {
             panic!("The component '{}' could not be retrieved", component_name);
         }

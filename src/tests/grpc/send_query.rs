@@ -44,6 +44,21 @@ mod refinements {
     }
 
     #[tokio::test]
+    async fn send_syntax_query() {
+        let backend = ConcreteEcdarBackend::default();
+        let query_request = construct_query_request("syntax: Machine");
+
+        let query_response = backend.send_query(query_request).await;
+
+        let query_result = query_response.unwrap().into_inner();
+        let result = query_result.result.unwrap();
+        match result {
+            query_response::Result::Success(_) => {}
+            _ => panic!("Expected success, got {:?}", result),
+        }
+    }
+
+    #[tokio::test]
     async fn send_determinism_query() {
         let backend = ConcreteEcdarBackend::default();
         let query_request = construct_query_request("determinism: Machine");

@@ -17,6 +17,7 @@ pub enum QueryExpression {
     GetComponent(SaveExpression),
     Prune(SaveExpression),
     BisimMinim(SaveExpression),
+    Syntax(SystemExpression),
 }
 
 #[derive(Debug, Clone)]
@@ -105,6 +106,9 @@ impl Display for QueryExpression {
             }
             QueryExpression::Specification(system) => {
                 write!(f, "specification: {}", system)
+            }
+            QueryExpression::Syntax(system) => {
+                write!(f, "syntax: {}", system)
             }
         }
     }

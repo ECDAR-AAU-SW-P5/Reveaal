@@ -10,6 +10,7 @@ use edbm::util::constraints::ClockIndex;
 use std::collections::hash_set::HashSet;
 use std::collections::HashMap;
 use std::iter::FromIterator;
+use std::rc::Rc;
 
 use super::transition_system::ComponentInfoTree;
 use super::{CompositionType, LocationID};
@@ -28,9 +29,9 @@ pub struct ComponentInfo {
 pub struct CompiledComponent {
     inputs: HashSet<Action>,
     outputs: HashSet<Action>,
-    locations: HashMap<LocationID, LocationTree>,
+    locations: HashMap<LocationID, Rc<LocationTree>>,
     location_edges: HashMap<LocationID, Vec<(Action, Transition)>>,
-    initial_location: Option<LocationTree>,
+    initial_location: Option<Rc<LocationTree>>,
     comp_info: ComponentInfo,
     dim: ClockIndex,
 }
@@ -48,7 +49,7 @@ impl CompiledComponent {
                 .map_err(|e| e.to_simple_failure(&component.name))?;
         }
 
-        let locations: HashMap<LocationID, LocationTree> = component
+        let locations: HashMap<LocationID, Rc<LocationTree>> = component
             .locations
             .iter()
             .map(|loc| {
@@ -124,7 +125,7 @@ impl TransitionSystem for CompiledComponent {
         self.dim
     }
 
-    fn next_transitions(&self, locations: &LocationTree, action: &str) -> Vec<Transition> {
+    fn next_transitions(&self, locations: Rc<LocationTree>, action: &str) -> Vec<Transition> {
         assert!(self.actions_contain(action));
         let is_input = self.inputs_contain(action);
 
@@ -160,11 +161,11 @@ impl TransitionSystem for CompiledComponent {
         self.inputs.union(&self.outputs).cloned().collect()
     }
 
-    fn get_initial_location(&self) -> Option<LocationTree> {
+    fn get_initial_location(&self) -> Option<Rc<LocationTree>> {
         self.initial_location.clone()
     }
 
-    fn get_all_locations(&self) -> Vec<LocationTree> {
+    fn get_all_locations(&self) -> Vec<Rc<LocationTree>> {
         self.locations.values().cloned().collect()
     }
 
@@ -194,7 +195,7 @@ impl TransitionSystem for CompiledComponent {
         CompositionType::Simple
     }
 
-    fn get_location(&self, id: &LocationID) -> Option<LocationTree> {
+    fn get_location(&self, id: &LocationID) -> Option<Rc<LocationTree>> {
         self.locations.get(id).cloned()
     }
 
@@ -210,7 +211,10 @@ impl TransitionSystem for CompiledComponent {
         self.comp_info.name.clone()
     }
 
-    fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String> {
+    fn construct_location_tree(
+        &self,
+        target: SpecificLocation,
+    ) -> Result<Rc<LocationTree>, String> {
         match target {
             SpecificLocation::ComponentLocation { comp, location_id } => {
                 assert_eq!(comp.name, self.comp_info.name);

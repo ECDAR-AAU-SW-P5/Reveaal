@@ -7,7 +7,7 @@ mod reachability_edge_test {
 
     #[test_case("Machine", vec!["E25".to_string(), "E26".to_string(), "E27".to_string(), "E28".to_string(), "E29".to_string()]; "Edge ID test on Machine from the ECDAR University")]
     fn edge_id_checking(component_name: &str, edge_ids: Vec<String>) {
-        let component = read_json_component(FOLDER_PATH, component_name);
+        let component = read_json_component(FOLDER_PATH, component_name).unwrap();
         for (i, edge) in component.edges.iter().enumerate() {
             assert_eq!(edge.id, edge_ids[i]);
         }

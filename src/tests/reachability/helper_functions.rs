@@ -29,7 +29,8 @@ pub mod reachability_test_helper_functions {
         .to_comp_loader();
         let mut dim: ClockIndex = 0;
         let mut quotient_index = None;
-        let machine = get_system_recipe(&model, &mut (*comp_loader), &mut dim, &mut quotient_index);
+        let machine =
+            get_system_recipe(&model, &mut (*comp_loader), &mut dim, &mut quotient_index).unwrap();
         //TODO:: - unwrap might not be the best way to handle this
         let system = machine.clone().compile(dim).unwrap();
         (machine, system)

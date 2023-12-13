@@ -5,8 +5,9 @@ use crate::model_objects::{
     PassedStateList, PassedStateListExt, StatePair, Transition, WaitingStateList,
 };
 use crate::system::query_failures::RefinementFailure;
-use crate::transition_systems::{LocationTree, TransitionSystemPtr};
+use crate::transition_systems::TransitionSystemPtr;
 use std::collections::HashSet;
+use std::rc::Rc;
 
 use super::query_failures::{ActionFailure, RefinementPrecondition, RefinementResult};
 
@@ -140,11 +141,11 @@ pub fn check_refinement(sys1: TransitionSystemPtr, sys2: TransitionSystemPtr) ->
 
     let mut initial_pair = StatePair::from_locations(
         dimensions,
-        initial_locations_1.clone(),
-        initial_locations_2.clone(),
+        Rc::clone(&initial_locations_1),
+        Rc::clone(&initial_locations_2),
     );
 
-    if !prepare_init_state(&mut initial_pair, initial_locations_1, initial_locations_2) {
+    if initial_pair.ref_zone().is_empty() {
         return RefinementFailure::empty_initial(sys1.as_ref(), sys2.as_ref());
     }
     initial_pair.extrapolate_max_bounds(context.sys1, context.sys2);
@@ -336,12 +337,10 @@ fn build_state_pair(
     context: &mut RefinementContext,
     is_state1: bool,
 ) -> BuildResult {
-    //Creates new state pair
-    let mut new_sp: StatePair = curr_pair.clone();
     //Creates DBM for that state pair
-    let mut new_sp_zone = new_sp.take_zone();
+    let mut new_sp_zone = curr_pair.clone_zone();
+
     //Apply guards on both sides
-    let (locations1, locations2) = new_sp.get_mut_states(is_state1);
 
     //Applies the left side guards and checks if zone is valid
     new_sp_zone = transition1.apply_guards(new_sp_zone);
@@ -361,16 +360,15 @@ fn build_state_pair(
     new_sp_zone = new_sp_zone.up();
 
     //Update locations in states
-
-    transition1.move_locations(locations1);
-    transition2.move_locations(locations2);
+    let (locations1, locations2) = (
+        Rc::clone(&transition1.target_locations),
+        Rc::clone(&transition2.target_locations),
+    );
 
     // Apply invariants on the left side of relation
     let (left_loc, right_loc) = if is_state1 {
-        //(locations2, locations1)
         (locations1, locations2)
     } else {
-        //(locations1, locations2)
         (locations2, locations1)
     };
 
@@ -395,8 +393,7 @@ fn build_state_pair(
         return BuildResult::Failure;
     }
 
-    new_sp.set_zone(new_sp_zone);
-
+    let mut new_sp = StatePair::new(left_loc, right_loc, Rc::new(new_sp_zone));
     new_sp.extrapolate_max_bounds(context.sys1, context.sys2);
 
     if !context.passed_list.has(&new_sp) && !context.waiting_list.has(&new_sp) {
@@ -406,20 +403,6 @@ fn build_state_pair(
     }
 
     BuildResult::Success
-}
-
-fn prepare_init_state(
-    initial_pair: &mut StatePair,
-    initial_locations_1: LocationTree,
-    initial_locations_2: LocationTree,
-) -> bool {
-    let mut sp_zone = initial_pair.take_zone();
-    sp_zone = initial_locations_1.apply_invariants(sp_zone);
-    sp_zone = initial_locations_2.apply_invariants(sp_zone);
-
-    initial_pair.set_zone(sp_zone);
-
-    !initial_pair.ref_zone().is_empty()
 }
 
 fn check_preconditions(

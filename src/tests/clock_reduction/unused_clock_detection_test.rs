@@ -10,7 +10,8 @@ mod unused_clocks_tests {
         let component = read_json_component(
             "samples/json/ClockReductionTest/UnusedClockWithCycle",
             component_name,
-        );
+        )
+        .unwrap();
 
         let compiled_component = CompiledComponent::compile(
             component.clone(),
@@ -35,7 +36,8 @@ mod unused_clocks_tests {
         let component = read_json_component(
             "samples/json/ClockReductionTest/UnusedClock",
             component_name,
-        );
+        )
+        .unwrap();
 
         let compiled_component = CompiledComponent::compile(
             component.clone(),

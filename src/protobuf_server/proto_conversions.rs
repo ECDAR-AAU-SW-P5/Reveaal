@@ -2,6 +2,7 @@ use crate::protobuf_server::services::query_response::{
     ConsistencyFailure as ProtobufConsistencyFailure,
     DeterminismFailure as ProtobufDeterminismFailure, ModelFailure, ReachabilityFailure,
     ReachabilityPath, RefinementFailure as ProtobufRefinementFailure,
+    SyntaxFailure as ProtobufSyntaxFailure,
 };
 use crate::protobuf_server::services::{
     self, clock::Clock as ProtoClockEnum, clock::ComponentClock as ProtoComponentClock,
@@ -210,6 +211,14 @@ impl From<DeterminismFailure> for ProtobufDeterminismFailure {
         Self {
             system: df.system,
             failure_state: Some(state_action_to_proto(df.state, df.action)),
+        }
+    }
+}
+
+impl From<SyntaxFailure> for ProtobufSyntaxFailure {
+    fn from(sf: SyntaxFailure) -> Self {
+        match sf {
+            SyntaxFailure::Unparsable { msg, path } => ProtobufSyntaxFailure { msg, path },
         }
     }
 }

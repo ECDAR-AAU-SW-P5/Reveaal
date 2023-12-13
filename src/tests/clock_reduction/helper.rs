@@ -13,7 +13,7 @@ pub mod test {
 
     /// Reads and processes a component.
     pub fn read_json_component_and_process(project_path: &str, component_name: &str) -> Component {
-        let mut component = read_json_component(project_path, component_name);
+        let mut component = read_json_component(project_path, component_name).unwrap();
         let inputs = component.get_input_actions();
         input_enabler::make_input_enabled(&mut component, &inputs);
         component
@@ -77,8 +77,8 @@ pub mod test {
         let mut component_loader = project_loader.to_comp_loader();
 
         let mut next_clock_index: usize = 0;
-        let mut component1 = component_loader.get_component(comp1).clone();
-        let mut component2 = component_loader.get_component(comp2).clone();
+        let mut component1 = component_loader.get_component(comp1).unwrap().clone();
+        let mut component2 = component_loader.get_component(comp2).unwrap().clone();
 
         component1.set_clock_indices(&mut next_clock_index);
         component2.set_clock_indices(&mut next_clock_index);
@@ -104,8 +104,8 @@ pub mod test {
         let mut component_loader = project_loader.to_comp_loader();
 
         let mut next_clock_index: usize = 0;
-        let mut component1 = component_loader.get_component(comp1).clone();
-        let mut component2 = component_loader.get_component(comp2).clone();
+        let mut component1 = component_loader.get_component(comp1).unwrap().clone();
+        let mut component2 = component_loader.get_component(comp2).unwrap().clone();
 
         component1.set_clock_indices(&mut next_clock_index);
         component2.set_clock_indices(&mut next_clock_index);

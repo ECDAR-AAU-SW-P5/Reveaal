@@ -1,0 +1,67 @@
+{
+  "name": "syntaxFailure",
+  "declarations": "clock u;",
+  "locations": [
+    {
+      "urgency": "NORMAL",
+      "x": 120.0,
+      "y": 120.0,
+      "color": "6",
+      "nicknameX": 30.0,
+      "nicknameY": -10.0,
+      "invariantX": 30.0,
+      "invariantY": 10.0
+    },
+    {
+      "id": "L17",
+      "nickname": "",
+      "invariant": "u\u003c1",
+      "type": "NORMAL",
+      "urgency": "NORMAL",
+      "x": 320.00001,
+      "y": 120.0,
+      "color": "6",
+      "nicknameX": 30.0,
+      "nicknameY": -10.0,
+      "invariantX": 30.0,
+      "invariantY": 10.0
+    }
+  ],
+  "edges": [
+    {
+      "id": "E0",
+      "group": "",
+      "sourceLocation": "L16",
+      "targetLocation": "L17",
+      "status": "INPUT",
+      "select": "",
+      "guard": "u \u003c1",
+      "update": "",
+      "sync": "coffee",
+      "isLocked": false,
+      "nails": [
+        {
+          "x": 180.0,
+          "y": 120.0,
+          "propertyType": "GUARD",
+          "propertyX": 10.0,
+          "propertyY": 0.0
+        },
+        {
+          "x": 240.46740467404675,
+          "y": 118.65928659286593,
+          "propertyType": "SYNCHRONIZATION",
+          "propertyX": 10.0,
+          "propertyY": 0.0
+        }
+      ]
+    }
+  ],
+  "description": "",
+  "x": 88.8,
+  "y": 152.0,
+  "width": 450.0,
+  "height": 240.0,
+  "color": "6",
+  "includeInPeriodicCheck": false
+}

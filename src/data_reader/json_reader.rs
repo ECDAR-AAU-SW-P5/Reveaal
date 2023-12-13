@@ -1,4 +1,5 @@
 use crate::model_objects::{Component, Query, SystemDeclarations};
+use crate::system::query_failures::{SyntaxFailure, SyntaxResult};
 use serde::de::DeserializeOwned;
 use std::fs::File;
 use std::io::Read;
@@ -21,19 +22,21 @@ pub fn read_system_declarations<P: AsRef<Path>>(project_path: P) -> Option<Syste
     }
 }
 
-pub fn read_json_component<P: AsRef<Path>>(project_path: P, component_name: &str) -> Component {
+pub fn read_json_component<P: AsRef<Path>>(
+    project_path: P,
+    component_name: &str,
+) -> Result<Component, SyntaxResult> {
     let component_path = project_path
         .as_ref()
         .join("Components")
         .join(format!("{}.json", component_name));
 
-    let component: Component = match read_json(&component_path) {
-        Ok(json) => json,
-        Err(error) => panic!(
-            "We got error {}, and could not parse json file {} to component",
-            error,
-            component_path.display()
-        ),
+    let component: Result<Component, SyntaxResult> = match read_json(&component_path) {
+        Ok(json) => Ok(json),
+        Err(error) => Err(SyntaxFailure::unparsable(
+            error.to_string(),
+            component_path.display().to_string(),
+        )),
     };
 
     component
@@ -53,14 +56,7 @@ pub fn read_json<T: DeserializeOwned, P: AsRef<Path>>(filename: P) -> serde_json
     let mut data = String::new();
     file.read_to_string(&mut data).unwrap();
 
-    let json_file = serde_json::from_str(&data).unwrap_or_else(|_| {
-        panic!(
-            "{}: Json format is not as expected",
-            filename.as_ref().display()
-        )
-    });
-
-    Ok(json_file)
+    serde_json::from_str(&data)
 }
 
 pub fn json_to_component(json_str: &str) -> Result<Component, serde_json::Error> {

@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use edbm::zones::OwnedFederation;
 use log::warn;
 
@@ -44,7 +46,7 @@ fn is_deterministic_helper(
 
     for action in system.get_actions() {
         let mut location_fed = OwnedFederation::empty(system.get_dim());
-        for transition in &system.next_transitions(&state.decorated_locations, &action) {
+        for transition in &system.next_transitions(Rc::clone(&state.decorated_locations), &action) {
             let mut new_state = state.clone();
             if transition.use_transition(&mut new_state) {
                 let mut allowed_fed = transition.get_allowed_federation();
@@ -95,7 +97,7 @@ pub fn consistency_least_helper(
     passed_list.push(state.clone());
 
     for input in system.get_input_actions() {
-        for transition in &system.next_inputs(&state.decorated_locations, &input) {
+        for transition in &system.next_inputs(Rc::clone(&state.decorated_locations), &input) {
             let mut new_state = state.clone();
             if transition.use_transition(&mut new_state) {
                 new_state.extrapolate_max_bounds(system);
@@ -105,12 +107,12 @@ pub fn consistency_least_helper(
         }
     }
 
-    if state.zone_ref().can_delay_indefinitely() {
+    if state.ref_zone().can_delay_indefinitely() {
         return Ok(());
     }
 
     for output in system.get_output_actions() {
-        for transition in system.next_outputs(&state.decorated_locations, &output) {
+        for transition in system.next_outputs(Rc::clone(&state.decorated_locations), &output) {
             let mut new_state = state.clone();
             if transition.use_transition(&mut new_state) {
                 new_state.extrapolate_max_bounds(system);
@@ -135,7 +137,7 @@ fn consistency_fully_helper(
     passed_list.push(state.clone());
 
     for input in system.get_input_actions() {
-        for transition in system.next_inputs(&state.decorated_locations, &input) {
+        for transition in system.next_inputs(Rc::clone(&state.decorated_locations), &input) {
             let mut new_state = state.clone();
             if transition.use_transition(&mut new_state) {
                 new_state.extrapolate_max_bounds(system);
@@ -149,7 +151,7 @@ fn consistency_fully_helper(
 
     let mut output_existed = false;
     for output in system.get_output_actions() {
-        for transition in system.next_outputs(&state.decorated_locations, &output) {
+        for transition in system.next_outputs(Rc::clone(&state.decorated_locations), &output) {
             let mut new_state = state.clone();
             if transition.use_transition(&mut new_state) {
                 new_state.extrapolate_max_bounds(system);
@@ -167,7 +169,7 @@ fn consistency_fully_helper(
         Ok(())
     } else {
         let last_state = passed_list.last().unwrap();
-        match last_state.zone_ref().can_delay_indefinitely() {
+        match last_state.ref_zone().can_delay_indefinitely() {
             false => ConsistencyFailure::inconsistent_from(system, &state),
             true => Ok(()),
         }

@@ -146,6 +146,8 @@ pub enum QueryResult {
     Refinement(RefinementResult),
     /// A consistency query returned a success or failure, see [ConsistencyResult].
     Consistency(ConsistencyResult),
+    /// A syntax query returned a success or failure, see [SyntaxResult].
+    Syntax(SyntaxResult),
     /// A determinism query returned a success or failure, see [DeterminismResult].
     Determinism(DeterminismResult),
     /// A get components query returned a new component.
@@ -160,6 +162,8 @@ pub type PathResult = Result<SpecificPath, PathFailure>;
 pub type RefinementResult = Result<(), RefinementFailure>;
 
 pub type ConsistencyResult = Result<(), ConsistencyFailure>;
+
+pub type SyntaxResult = Result<(), SyntaxFailure>;
 
 pub type DeterminismResult = Result<(), DeterminismFailure>;
 
@@ -517,6 +521,20 @@ impl DeterminismFailure {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SyntaxFailure {
+    Unparsable { msg: String, path: String },
+}
+
+impl SyntaxFailure {
+    pub fn unparsable(msg: impl Into<String>, path: impl Into<String>) -> SyntaxResult {
+        Err(SyntaxFailure::Unparsable {
+            msg: msg.into(),
+            path: path.into(),
+        })
+    }
+}
+
 // ---------------------------- //
 // --- Format Display Impl  --- //
 // ---------------------------- //
@@ -643,6 +661,16 @@ impl std::fmt::Display for RefinementPrecondition {
     }
 }
 
+impl std::fmt::Display for SyntaxFailure {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SyntaxFailure::Unparsable { msg, path } => {
+                write!(f, "The file '{}' could not be parsed: {}", path, msg)
+            }
+        }
+    }
+}
+
 // ------------------------------- //
 // - Ugly conversions begin here - //
 // ----- You have been warned ---- //
@@ -655,6 +683,7 @@ mod conversions {
     impl Error for RefinementFailure {}
     impl Error for ConsistencyFailure {}
     impl Error for DeterminismFailure {}
+    impl Error for SyntaxFailure {}
 
     impl From<RefinementPrecondition> for RefinementFailure {
         fn from(failure: RefinementPrecondition) -> Self {
@@ -700,6 +729,12 @@ mod conversions {
     impl From<ConsistencyResult> for QueryResult {
         fn from(res: ConsistencyResult) -> Self {
             QueryResult::Consistency(res)
+        }
+    }
+
+    impl From<SyntaxResult> for QueryResult {
+        fn from(res: SyntaxResult) -> Self {
+            QueryResult::Syntax(res)
         }
     }
 

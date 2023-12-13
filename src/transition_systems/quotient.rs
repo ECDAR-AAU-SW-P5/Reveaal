@@ -14,6 +14,7 @@ use crate::transition_systems::{
     LocationTree, TransitionID, TransitionSystem, TransitionSystemPtr,
 };
 use std::collections::hash_set::HashSet;
+use std::rc::Rc;
 use std::vec;
 
 use super::CompositionType;
@@ -24,8 +25,8 @@ pub struct Quotient {
     s: TransitionSystemPtr,
     inputs: HashSet<String>,
     outputs: HashSet<String>,
-    universal_location: LocationTree,
-    inconsistent_location: LocationTree,
+    universal_location: Rc<LocationTree>,
+    inconsistent_location: Rc<LocationTree>,
     decls: Declarations,
     quotient_clock_index: ClockIndex,
     new_input_name: String,
@@ -124,8 +125,8 @@ impl TransitionSystem for Quotient {
             let (left, right) = self.get_children();
             let loc_l = loc.get_left();
             let loc_r = loc.get_right();
-            let mut bounds_l = left.get_local_max_bounds(loc_l);
-            let bounds_r = right.get_local_max_bounds(loc_r);
+            let mut bounds_l = left.get_local_max_bounds(loc_l.as_ref());
+            let bounds_r = right.get_local_max_bounds(loc_r.as_ref());
             bounds_l.add_bounds(&bounds_r);
             bounds_l.add_upper(self.quotient_clock_index, 0);
             bounds_l
@@ -136,7 +137,7 @@ impl TransitionSystem for Quotient {
         self.dim
     }
 
-    fn next_transitions(&self, location: &LocationTree, action: &str) -> Vec<Transition> {
+    fn next_transitions(&self, location: Rc<LocationTree>, action: &str) -> Vec<Transition> {
         assert!(self.actions_contain(action));
         let is_input = self.inputs_contain(action);
 
@@ -163,8 +164,12 @@ impl TransitionSystem for Quotient {
         // As it is not universal or inconsistent it must be a quotient loc
         let loc_t = location.get_left();
         let loc_s = location.get_right();
-        let t = self.t.next_transitions_if_available(loc_t, action);
-        let s = self.s.next_transitions_if_available(loc_s, action);
+        let t = self
+            .t
+            .next_transitions_if_available(Rc::clone(&loc_t), action);
+        let s = self
+            .s
+            .next_transitions_if_available(Rc::clone(&loc_s), action);
 
         //Rule 1
         if self.s.actions_contain(action) && self.t.actions_contain(action) {
@@ -172,12 +177,12 @@ impl TransitionSystem for Quotient {
                 for s_transition in &s {
                     // In the following comments we use ϕ to symbolize the guard of the transition
                     // ϕ_T ∧ Inv(l2_t)[r |-> 0] ∧ Inv(l1_t) ∧ ϕ_S ∧ Inv(l2_s)[r |-> 0] ∧ Inv(l1_s)
-                    let guard_zone = get_allowed_fed(loc_t, t_transition)
-                        .intersection(&get_allowed_fed(loc_s, s_transition));
+                    let guard_zone = get_allowed_fed(loc_t.as_ref(), t_transition)
+                        .intersection(&get_allowed_fed(loc_s.as_ref(), s_transition));
 
                     let target_locations = merge(
-                        &t_transition.target_locations,
-                        &s_transition.target_locations,
+                        Rc::clone(&t_transition.target_locations),
+                        Rc::clone(&s_transition.target_locations),
                     );
 
                     //Union of left and right updates
@@ -201,9 +206,10 @@ impl TransitionSystem for Quotient {
         if self.s.actions_contain(action) && !self.t.actions_contain(action) {
             //Independent S
             for s_transition in &s {
-                let guard_zone = get_allowed_fed(loc_s, s_transition);
+                let guard_zone = get_allowed_fed(&loc_s, s_transition);
 
-                let target_locations = merge(loc_t, &s_transition.target_locations);
+                let target_locations =
+                    merge(Rc::clone(&loc_t), Rc::clone(&s_transition.target_locations));
                 let updates = s_transition.updates.clone();
                 transitions.push(Transition {
                     id: TransitionID::Quotient(Vec::new(), vec![s_transition.id.clone()]),
@@ -219,7 +225,7 @@ impl TransitionSystem for Quotient {
             let mut g_s = OwnedFederation::empty(self.dim);
 
             for s_transition in &s {
-                let allowed_fed = get_allowed_fed(loc_s, s_transition);
+                let allowed_fed = get_allowed_fed(loc_s.as_ref(), s_transition);
                 g_s += allowed_fed;
             }
 
@@ -251,14 +257,15 @@ impl TransitionSystem for Quotient {
             //Calculate inverse G_T
             let mut g_t = OwnedFederation::empty(self.dim);
             for t_transition in &t {
-                g_t = g_t.union(&get_allowed_fed(loc_t, t_transition));
+                g_t = g_t.union(&get_allowed_fed(loc_t.as_ref(), t_transition));
             }
             let inverse_g_t = g_t.inverse();
 
             for s_transition in &s {
                 // In the following comments we use ϕ to symbolize the guard of the transition
                 // ϕ_S ∧ Inv(l2_s)[r |-> 0] ∧ Inv(l1_s) ∧ ¬G_T
-                let guard_zone = get_allowed_fed(loc_s, s_transition).intersection(&inverse_g_t);
+                let guard_zone =
+                    get_allowed_fed(loc_s.as_ref(), s_transition).intersection(&inverse_g_t);
 
                 let updates = vec![CompiledUpdate {
                     clock_index: self.quotient_clock_index,
@@ -279,8 +286,8 @@ impl TransitionSystem for Quotient {
 
         //Rule 7
         if action == self.new_input_name {
-            let inverse_t_invariant = get_invariant(loc_t, self.dim).inverse();
-            let s_invariant = get_invariant(loc_s, self.dim);
+            let inverse_t_invariant = get_invariant(loc_t.as_ref(), self.dim).inverse();
+            let s_invariant = get_invariant(loc_s.as_ref(), self.dim);
             let guard_zone = inverse_t_invariant.intersection(&s_invariant);
 
             let updates = vec![CompiledUpdate {
@@ -298,11 +305,12 @@ impl TransitionSystem for Quotient {
         //Rule 8
         if self.t.actions_contain(action) && !self.s.actions_contain(action) {
             for t_transition in &t {
-                let mut guard_zone = get_allowed_fed(loc_t, t_transition);
+                let mut guard_zone = get_allowed_fed(loc_t.as_ref(), t_transition);
 
                 guard_zone = loc_s.apply_invariants(guard_zone);
 
-                let target_locations = merge(&t_transition.target_locations, loc_s);
+                let target_locations =
+                    merge(Rc::clone(&t_transition.target_locations), Rc::clone(&loc_s));
                 let updates = t_transition.updates.clone();
 
                 transitions.push(Transition {
@@ -328,22 +336,19 @@ impl TransitionSystem for Quotient {
     fn get_actions(&self) -> HashSet<String> {
         self.inputs.union(&self.outputs).cloned().collect()
     }
-    fn get_initial_location(&self) -> Option<LocationTree> {
+    fn get_initial_location(&self) -> Option<Rc<LocationTree>> {
         let (t, s) = self.get_children();
-        Some(merge(
-            &t.get_initial_location()?,
-            &s.get_initial_location()?,
-        ))
+        Some(merge(t.get_initial_location()?, s.get_initial_location()?))
     }
 
-    fn get_all_locations(&self) -> Vec<LocationTree> {
+    fn get_all_locations(&self) -> Vec<Rc<LocationTree>> {
         let mut location_trees = vec![];
 
         let left = self.t.get_all_locations();
         let right = self.s.get_all_locations();
         for loc_t in &left {
             for loc_s in &right {
-                let location = merge(loc_t, loc_s);
+                let location = merge(Rc::clone(loc_t), Rc::clone(loc_s));
                 location_trees.push(location);
             }
         }
@@ -385,12 +390,15 @@ impl TransitionSystem for Quotient {
         CompositionType::Quotient
     }
 
-    fn construct_location_tree(&self, target: SpecificLocation) -> Result<LocationTree, String> {
+    fn construct_location_tree(
+        &self,
+        target: SpecificLocation,
+    ) -> Result<Rc<LocationTree>, String> {
         match target {
             SpecificLocation::BranchLocation(left, right, _) => {
                 let left = self.t.construct_location_tree(*left)?;
                 let right = self.s.construct_location_tree(*right)?;
-                Ok(merge(&left, &right))
+                Ok(merge(left, right))
             }
             SpecificLocation::SpecialLocation(SpecialLocation::Universal) => {
                 Ok(self.universal_location.clone())
@@ -403,7 +411,7 @@ impl TransitionSystem for Quotient {
     }
 }
 
-fn merge(t: &LocationTree, s: &LocationTree) -> LocationTree {
+fn merge(t: Rc<LocationTree>, s: Rc<LocationTree>) -> Rc<LocationTree> {
     LocationTree::merge_as_quotient(t, s)
 }
 

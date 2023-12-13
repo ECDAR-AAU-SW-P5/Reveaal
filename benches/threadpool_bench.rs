@@ -72,9 +72,9 @@ fn construct_components(json: &[String]) -> Vec<ProtoComp> {
 fn threadpool_cache(c: &mut Criterion) {
     let mut loader = bench_helper::get_uni_loader();
     let comps = vec![
-        loader.get_component("Administration").clone(),
-        loader.get_component("Researcher").clone(),
-        loader.get_component("Machine").clone(),
+        loader.get_component("Administration").unwrap().clone(),
+        loader.get_component("Researcher").unwrap().clone(),
+        loader.get_component("Machine").unwrap().clone(),
     ];
     let expensive_query = String::from("determinism: Administration || Researcher || Machine");
     let cheap_query = String::from("determinism: Machine");
