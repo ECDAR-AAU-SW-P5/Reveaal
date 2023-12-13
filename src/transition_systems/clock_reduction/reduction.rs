@@ -431,7 +431,10 @@ mod tests {
             let dim = component.declarations.clocks.len() + 1;
             let clock_reduced_compiled_component =
                 CompiledComponent::compile(component, dim, &mut 0).unwrap();
-            /*
+
+            /* Temporarily commented out to make Clippy accept this test as clock_reduced_compiled_component.combine_clocks does not exist.
+             * Uncomment these lines when combine_clocks are implemented
+
             let decls = clock_reduced_compiled_component.get_component_decls();
 
             let a = HashSet::from([
@@ -440,10 +443,11 @@ mod tests {
                 *decls.get_clock_index_by_name("z").unwrap(),
             ]);
             let combine_clocks = Vec::from([a]);
-            */
+
 
             // Act
-            // clock_reduced_compiled_component.combine_clocks(&combine_clocks);
+            clock_reduced_compiled_component.combine_clocks(&combine_clocks);
+            */
 
             // Assert
             let decls = clock_reduced_compiled_component.get_all_system_decls()[0];
