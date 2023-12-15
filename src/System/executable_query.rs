@@ -4,6 +4,8 @@ use crate::System::reachability;
 use crate::System::refine;
 use crate::System::save_component::combine_components;
 use crate::TransitionSystems::TransitionSystemPtr;
+use edbm::util::constraints::ClockIndex;
+use std::cmp;
 
 use super::query_failures::PathFailure;
 use super::query_failures::QueryResult;
@@ -66,6 +68,7 @@ fn print_path(path: &Vec<SpecificDecision>) {
 
 pub trait ExecutableQuery {
     fn execute(self: Box<Self>) -> QueryResult;
+    fn get_dim(&self) -> ClockIndex;
 }
 
 pub struct RefinementExecutor {
@@ -78,6 +81,10 @@ impl ExecutableQuery for RefinementExecutor {
         let (sys1, sys2) = (self.sys1, self.sys2);
 
         refine::check_refinement(sys1, sys2).into()
+    }
+
+    fn get_dim(&self) -> ClockIndex {
+        cmp::max(self.sys1.get_dim(), self.sys2.get_dim())
     }
 }
 
@@ -96,6 +103,10 @@ impl ExecutableQuery for ReachabilityExecutor {
     fn execute(self: Box<Self>) -> QueryResult {
         reachability::find_specific_path(self.start_state, self.end_state, &self.transition_system)
             .into()
+    }
+
+    fn get_dim(&self) -> ClockIndex {
+        self.get_dim()
     }
 }
 
@@ -116,6 +127,10 @@ impl<'a> ExecutableQuery for GetComponentExecutor<'a> {
 
         QueryResult::GetComponent(comp)
     }
+
+    fn get_dim(&self) -> ClockIndex {
+        self.get_dim()
+    }
 }
 
 pub struct ConsistencyExecutor {
@@ -126,6 +141,10 @@ impl ExecutableQuery for ConsistencyExecutor {
     fn execute(self: Box<Self>) -> QueryResult {
         self.system.precheck_sys_rep().into()
     }
+
+    fn get_dim(&self) -> ClockIndex {
+        self.get_dim()
+    }
 }
 
 pub struct DeterminismExecutor {
@@ -135,5 +154,9 @@ pub struct DeterminismExecutor {
 impl ExecutableQuery for DeterminismExecutor {
     fn execute(self: Box<Self>) -> QueryResult {
         self.system.check_determinism().into()
+    }
+
+    fn get_dim(&self) -> ClockIndex {
+        self.get_dim()
     }
 }
