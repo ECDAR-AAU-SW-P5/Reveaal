@@ -1,9 +1,9 @@
 #[cfg(test)]
 mod tests {
-    use crate::ProtobufServer::services::SimulationStartRequest;
+    use crate::protobuf_server::services::SimulationStartRequest;
     use crate::{
-        tests::Simulation::helper::construct_step_requests,
-        ProtobufServer::{self, services::ecdar_backend_server::EcdarBackend},
+        protobuf_server::{self, services::ecdar_backend_server::EcdarBackend},
+        tests::simulation::helper::construct_step_requests,
     };
     use test_case::test_case;
     use tonic::Request;
@@ -45,7 +45,7 @@ mod tests {
         composition: &str,
     ) {
         // Arrange
-        let backend = ProtobufServer::ConcreteEcdarBackend::default();
+        let backend = protobuf_server::ConcreteEcdarBackend::default();
         let request = Request::new(SimulationStartRequest::new(
             component_names,
             components_path,

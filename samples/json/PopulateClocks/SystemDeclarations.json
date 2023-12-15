@@ -1,0 +1,4 @@
+{
+  "name": "System Declarations",
+  "declarations": "system Spec, Machine, Machine2, Machine3, Machine4, Administration, HalfAdm1, HalfAdm2, Researcher, Adm2;\nIO Spec { grant?, patent! }\nIO Machine { coin?, tea!, cof! }\nIO Machine2 { coin?, tea!, cof! }\nIO Machine3 { coin?, tea!, cof! }\nIO Administration { grant?, pub?, coin!, patent! }\nIO HalfAdm1 { grant?, pub?, coin!, patent! }\nIO HalfAdm2 { grant?, pub?, coin!, patent! }\nIO Researcher { cof?, tea?, pub! }\nIO Adm2 {grant?, pub?, coin!, patent!}"
+}

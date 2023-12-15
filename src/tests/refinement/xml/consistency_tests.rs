@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod test {
-    use crate::{tests::refinement::Helper::xml_run_query, System::query_failures::QueryResult};
+    use crate::{system::query_failures::QueryResult, tests::refinement::helper::xml_run_query};
 
     const PATH: &str = "samples/xml/ConsTests.xml";
 
@@ -9,7 +9,7 @@ mod test {
     }
 
     #[test]
-    fn testG1() {
+    fn test_g1() {
         let result = xml_run_query(PATH, "consistency: G1");
 
         if let QueryResult::Consistency(_) = &result {
@@ -19,7 +19,7 @@ mod test {
         }
     }
     #[test]
-    fn testG2() {
+    fn test_g2() {
         let result = xml_run_query(PATH, "consistency: G2");
 
         if let QueryResult::Consistency(_) = &result {
@@ -30,7 +30,7 @@ mod test {
     }
 
     #[test]
-    fn testG3() {
+    fn test_g3() {
         let result = xml_run_query(PATH, "consistency: G3");
 
         if let QueryResult::Consistency(_) = &result {
@@ -41,7 +41,7 @@ mod test {
     }
 
     #[test]
-    fn testG4() {
+    fn test_g4() {
         let result = xml_run_query(PATH, "consistency: G4");
 
         if let QueryResult::Consistency(_) = &result {
@@ -52,7 +52,7 @@ mod test {
     }
 
     #[test]
-    fn testG5() {
+    fn test_g5() {
         let result = xml_run_query(PATH, "consistency: G5");
 
         if let QueryResult::Consistency(_) = &result {
@@ -63,7 +63,7 @@ mod test {
     }
 
     #[test]
-    fn testG6() {
+    fn test_g6() {
         let result = xml_run_query(PATH, "consistency: G6");
 
         if let QueryResult::Consistency(_) = &result {
@@ -74,7 +74,7 @@ mod test {
     }
 
     #[test]
-    fn testG7() {
+    fn test_g7() {
         let result = xml_run_query(PATH, "consistency: G7");
 
         if let QueryResult::Consistency(_) = &result {
@@ -85,7 +85,7 @@ mod test {
     }
 
     #[test]
-    fn testG8() {
+    fn test_g8() {
         let result = xml_run_query(PATH, "consistency: G8");
 
         if let QueryResult::Consistency(_) = &result {
@@ -96,7 +96,7 @@ mod test {
     }
 
     #[test]
-    fn testG9() {
+    fn test_g9() {
         let result = xml_run_query(PATH, "consistency: G9");
 
         if let QueryResult::Consistency(_) = &result {
@@ -107,7 +107,7 @@ mod test {
     }
 
     #[test]
-    fn testG10() {
+    fn test_g10() {
         let result = xml_run_query(PATH, "consistency: G10");
 
         if let QueryResult::Consistency(_) = &result {
@@ -118,7 +118,7 @@ mod test {
     }
 
     #[test]
-    fn testG11() {
+    fn test_g11() {
         let result = xml_run_query(PATH, "consistency: G11");
 
         if let QueryResult::Consistency(_) = &result {
@@ -129,7 +129,7 @@ mod test {
     }
 
     #[test]
-    fn testG12() {
+    fn test_g12() {
         let result = xml_run_query(PATH, "consistency: G12");
 
         if let QueryResult::Consistency(_) = &result {
@@ -140,7 +140,7 @@ mod test {
     }
 
     #[test]
-    fn testG13() {
+    fn test_g13() {
         let result = xml_run_query(PATH, "consistency: G13");
 
         if let QueryResult::Consistency(_) = &result {
@@ -151,7 +151,7 @@ mod test {
     }
 
     #[test]
-    fn testG14() {
+    fn test_g14() {
         let result = xml_run_query(PATH, "consistency: G14");
 
         if let QueryResult::Consistency(_) = &result {
@@ -162,7 +162,7 @@ mod test {
     }
 
     #[test]
-    fn testG15() {
+    fn test_g15() {
         let result = xml_run_query(PATH, "consistency: G15");
 
         if let QueryResult::Consistency(_) = &result {
@@ -173,7 +173,7 @@ mod test {
     }
 
     #[test]
-    fn testG16() {
+    fn test_g16() {
         let result = xml_run_query(PATH, "consistency: G16");
 
         if let QueryResult::Consistency(_) = &result {
@@ -184,7 +184,7 @@ mod test {
     }
 
     #[test]
-    fn testG17() {
+    fn test_g17() {
         let result = xml_run_query(PATH, "consistency: G17");
 
         if let QueryResult::Consistency(_) = &result {
@@ -195,7 +195,7 @@ mod test {
     }
 
     #[test]
-    fn testG18() {
+    fn test_g18() {
         let result = xml_run_query(PATH, "consistency: G18");
 
         if let QueryResult::Consistency(_) = &result {
@@ -206,7 +206,7 @@ mod test {
     }
 
     #[test]
-    fn testG19() {
+    fn test_g19() {
         let result = xml_run_query(PATH, "consistency: G19");
 
         if let QueryResult::Consistency(_) = &result {
@@ -217,7 +217,7 @@ mod test {
     }
 
     #[test]
-    fn testG20() {
+    fn test_g20() {
         let result = xml_run_query(PATH, "consistency: G20");
 
         if let QueryResult::Consistency(_) = &result {
@@ -228,7 +228,7 @@ mod test {
     }
 
     #[test]
-    fn testG21() {
+    fn test_g21() {
         let result = xml_run_query(PATH, "consistency: G21");
 
         if let QueryResult::Consistency(_) = &result {

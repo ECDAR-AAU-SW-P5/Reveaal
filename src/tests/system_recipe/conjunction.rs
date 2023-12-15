@@ -4,9 +4,9 @@ mod test {
     use std::collections::HashSet;
 
     use crate::{
-        tests::refinement::Helper::json_run_query,
-        System::extract_system_rep::ExecutableQueryError,
-        System::query_failures::{ActionFailure, SystemRecipeFailure},
+        system::extract_system_rep::ExecutableQueryError,
+        system::query_failures::{ActionFailure, SystemRecipeFailure},
+        tests::refinement::helper::json_run_query,
     };
 
     const PATH: &str = "samples/json/SystemRecipe/Conjunction";

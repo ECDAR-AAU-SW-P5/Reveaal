@@ -1,8 +1,8 @@
 use std::vec;
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use reveaal::DataReader::json_writer::component_to_json;
-use reveaal::ProtobufServer::{
+use reveaal::data_reader::json_writer::component_to_json;
+use reveaal::protobuf_server::{
     services::{
         component::Rep, ecdar_backend_server::EcdarBackend, Component as ProtoComp, ComponentsInfo,
         QueryRequest,
@@ -18,7 +18,7 @@ use futures::StreamExt;
 mod bench_helper;
 pub mod flamegraph;
 use flamegraph::flamegraph_profiler::FlamegraphProfiler;
-use reveaal::ModelObjects::Component;
+use reveaal::model_objects::Component;
 
 const NUM_OF_REQUESTS: u32 = 512;
 
@@ -72,9 +72,9 @@ fn construct_components(json: &[String]) -> Vec<ProtoComp> {
 fn threadpool_cache(c: &mut Criterion) {
     let mut loader = bench_helper::get_uni_loader(false);
     let comps = vec![
-        loader.get_component("Administration").clone(),
-        loader.get_component("Researcher").clone(),
-        loader.get_component("Machine").clone(),
+        loader.get_component("Administration").unwrap().clone(),
+        loader.get_component("Researcher").unwrap().clone(),
+        loader.get_component("Machine").unwrap().clone(),
     ];
     let expensive_query = String::from("determinism: Administration || Researcher || Machine");
     let cheap_query = String::from("determinism: Machine");

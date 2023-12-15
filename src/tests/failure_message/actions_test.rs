@@ -2,12 +2,12 @@
 
 mod test {
 
-    use crate::tests::refinement::Helper::json_run_query;
-    use crate::System::query_failures::{
+    use crate::system::query_failures::{
         ConsistencyFailure, DeterminismFailure, DeterminismResult, QueryResult, RefinementFailure,
         RefinementPrecondition,
     };
-    use crate::System::specifics::SpecificLocation;
+    use crate::system::specifics::SpecificLocation;
+    use crate::tests::refinement::helper::json_run_query;
     const PATH: &str = "samples/json/Actions";
 
     #[test]

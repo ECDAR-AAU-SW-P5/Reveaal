@@ -35,7 +35,7 @@ pub enum Args {
     /// Reveaal query "determinism: Researcher" -i samples/json/EcdarUniversity
     Query {
         /// The query to execute
-        #[clap(value_name = "QUERY_TYPE: refinement|consistency|reachability|save-component", value_parser = query_check)]
+        #[clap(value_name = "QUERY_TYPE: refinement|consistency|reachability|save-component|syntax", value_parser = query_check)]
         query: String,
 
         /// File (XML) or folder (JSON) with component definitions

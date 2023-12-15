@@ -1,0 +1,25 @@
+name: Run Tests
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  ubuntu:
+    name: Tests Ubuntu
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+      - run: sudo apt-get install llvm protobuf-compiler
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: cargo test
+        uses: clechasseur/rs-cargo@v1
+        with:
+          command: test

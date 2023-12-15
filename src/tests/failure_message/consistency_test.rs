@@ -2,8 +2,8 @@
 
 mod test {
     use crate::{
-        tests::refinement::Helper::json_run_query,
-        System::query_failures::{ConsistencyFailure, ConsistencyResult, QueryResult},
+        system::query_failures::{ConsistencyFailure, ConsistencyResult, QueryResult},
+        tests::refinement::helper::json_run_query,
     };
 
     const PATH: &str = "samples/json/ConsistencyTest";

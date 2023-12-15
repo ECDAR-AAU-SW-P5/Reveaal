@@ -10,7 +10,7 @@ name = "reveaal"
 path = "src/lib.rs"
 
 [[bin]]
-name = "Reveaal"
+name = "reveaal"
 path = "src/main.rs"
 
 [features]

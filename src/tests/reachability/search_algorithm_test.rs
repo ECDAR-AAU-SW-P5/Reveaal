@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod reachability_search_algorithm_test {
 
-    use crate::tests::refinement::Helper::json_run_query;
-    use crate::System::query_failures::QueryResult;
+    use crate::system::query_failures::QueryResult;
+    use crate::tests::refinement::helper::json_run_query;
     use test_case::test_case;
 
     const PATH: &str = "samples/json/EcdarUniversity";
@@ -51,7 +51,9 @@ mod reachability_search_algorithm_test {
     #[test_case(PATH2, "reachability: Component3[1] && Component3[2] @ Component3[1].L6 && Component3[2].L6 -> Component3[1].L7 && Component3[2].L7", true; "Simple conjunction")]
     fn search_algorithm_returns_result(path: &str, query: &str, expected: bool) {
         match json_run_query(path, query).unwrap() {
-            QueryResult::Reachability(path) => assert_eq!(path.is_ok(), expected),
+            QueryResult::Reachability(path) => {
+                assert_eq!(path.is_ok(), expected, "Final state is not reachable")
+            }
             _ => panic!("Inconsistent query result, expected Reachability"),
         }
     }

@@ -1,11 +1,10 @@
-#![allow(non_snake_case)]
 use reveaal::cli::Args;
 use reveaal::logging::setup_logger;
-use reveaal::ModelObjects::Query;
-use reveaal::System::query_failures::QueryResult;
+use reveaal::model_objects::Query;
+use reveaal::system::query_failures::QueryResult;
 
 use clap::Parser;
-use reveaal::ProtobufServer::services::query_request::Settings;
+use reveaal::protobuf_server::services::query_request::Settings;
 use reveaal::{
     extract_system_rep, parse_queries, start_grpc_server_with_tokio, xml_parser, ComponentLoader,
     JsonProjectLoader, ProjectLoader, XmlProjectLoader,

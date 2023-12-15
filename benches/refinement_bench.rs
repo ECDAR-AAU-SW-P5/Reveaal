@@ -5,9 +5,9 @@ pub mod flamegraph;
 
 use flamegraph::flamegraph_profiler::FlamegraphProfiler;
 use reveaal::extract_system_rep::create_executable_query;
-use reveaal::ModelObjects::Query;
-use reveaal::System::executable_query::ExecutableQuery;
-use reveaal::System::query_failures::QueryResult;
+use reveaal::model_objects::Query;
+use reveaal::system::executable_query::ExecutableQuery;
+use reveaal::system::query_failures::QueryResult;
 use reveaal::{parse_queries, ComponentLoader};
 
 fn construct_query<'a>(

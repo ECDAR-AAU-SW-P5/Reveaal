@@ -4,11 +4,11 @@ mod test {
     use std::collections::HashSet;
 
     use crate::{
-        tests::refinement::Helper::json_run_query,
-        System::extract_system_rep::ExecutableQueryError,
-        System::query_failures::{
+        system::extract_system_rep::ExecutableQueryError,
+        system::query_failures::{
             ActionFailure, ConsistencyFailure, DeterminismFailure, SystemRecipeFailure,
         },
+        tests::refinement::helper::json_run_query,
     };
 
     const PATH: &str = "samples/json/SystemRecipe/Quotient";

@@ -1,23 +1,21 @@
-#![allow(non_snake_case)]
-pub mod DataReader;
-pub mod DataTypes;
-pub mod EdgeEval;
-pub mod ModelObjects;
-pub mod ProtobufServer;
-pub mod Simulation;
-pub mod System;
-pub mod TransitionSystems;
 pub mod cli;
+pub mod data_reader;
+pub mod edge_eval;
 pub mod logging;
+pub mod model_objects;
+pub mod protobuf_server;
+pub mod simulation;
+pub mod system;
 pub mod tests;
+pub mod transition_systems;
 
-pub use crate::DataReader::component_loader::{
+pub use crate::data_reader::component_loader::{
     ComponentLoader, JsonProjectLoader, ProjectLoader, XmlProjectLoader,
 };
-pub use crate::DataReader::{parse_queries, xml_parser};
-use crate::ProtobufServer::services::query_request::Settings;
-pub use crate::System::extract_system_rep;
-pub use ProtobufServer::start_grpc_server_with_tokio;
+pub use crate::data_reader::{parse_queries, xml_parser};
+use crate::protobuf_server::services::query_request::Settings;
+pub use crate::system::extract_system_rep;
+pub use protobuf_server::start_grpc_server_with_tokio;
 
 /// The default settings
 pub const DEFAULT_SETTINGS: Settings = Settings {

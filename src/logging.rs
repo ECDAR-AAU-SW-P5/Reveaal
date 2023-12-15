@@ -1,4 +1,4 @@
-use crate::ProtobufServer::services::query_response::Information;
+use crate::protobuf_server::services::query_response::Information;
 use chrono::Local;
 use colored::{ColoredString, Colorize};
 use log::SetLoggerError;

@@ -3,12 +3,12 @@ pub mod reachability_test_helper_functions {
 
     use crate::extract_system_rep::get_system_recipe;
     use crate::extract_system_rep::SystemRecipe;
+    use crate::model_objects::expressions::StateExpression;
+    use crate::model_objects::expressions::SystemExpression;
     use crate::parse_queries::parse_to_state_expr;
+    use crate::transition_systems::TransitionSystem;
     use crate::xml_parser;
     use crate::JsonProjectLoader;
-    use crate::ModelObjects::Expressions::StateExpression;
-    use crate::ModelObjects::Expressions::SystemExpression;
-    use crate::TransitionSystems::TransitionSystem;
     use crate::XmlProjectLoader;
 
     /// Helper function which converts a string to an option<box<BoolExpression>> by replacing ',' with "&&" and using the invariant parser.
@@ -29,7 +29,8 @@ pub mod reachability_test_helper_functions {
         .to_comp_loader();
         let mut dim: ClockIndex = 0;
         let mut quotient_index = None;
-        let machine = get_system_recipe(&model, &mut (*comp_loader), &mut dim, &mut quotient_index);
+        let machine =
+            get_system_recipe(&model, &mut (*comp_loader), &mut dim, &mut quotient_index).unwrap();
         //TODO:: - unwrap might not be the best way to handle this
         let system = machine.clone().compile(dim).unwrap();
         (machine, system)
