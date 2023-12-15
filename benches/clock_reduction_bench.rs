@@ -1,10 +1,10 @@
-use std::ops::Deref;
-use std::alloc::{GlobalAlloc, Layout};
-use std::sync::atomic::{AtomicU64, Ordering};
-use criterion::{criterion_group, criterion_main, Criterion, BenchmarkGroup};
+use criterion::{criterion_group, criterion_main, BenchmarkGroup, Criterion};
 use reveaal::ComponentLoader;
+use std::alloc::{GlobalAlloc, Layout};
+use std::ops::Deref;
+use std::sync::atomic::{AtomicU64, Ordering};
 
-pub struct Trallocator<A: GlobalAlloc>{
+pub struct Trallocator<A: GlobalAlloc> {
     alloc: A,
     allocated: AtomicU64,
     freed: AtomicU64,
@@ -26,7 +26,7 @@ unsafe impl<A: GlobalAlloc> GlobalAlloc for Trallocator<A> {
 
 impl<A: GlobalAlloc> Trallocator<A> {
     pub const fn new(a: A) -> Self {
-        Trallocator{
+        Trallocator {
             alloc: a,
             allocated: AtomicU64::new(0),
             freed: AtomicU64::new(0),
@@ -63,13 +63,11 @@ impl<A: GlobalAlloc> Trallocator<A> {
         self.get_allocated() - self.get_freed()
     }
 }
-use std::alloc::System;
-use std::fmt::format;
 use criterion::measurement::WallTime;
+use std::alloc::System;
 
 #[global_allocator]
 static GLOBAL: Trallocator<System> = Trallocator::new(System);
-
 
 mod bench_helper;
 use reveaal::extract_system_rep::create_executable_query;
@@ -87,24 +85,48 @@ const LONG_QUERY: &str = "refinement: (((((Adm2 && HalfAdm1 && HalfAdm2) || Mach
 /// This bench runs `REFINEMENT QUERY` with and without clock reduction such that you can compare the results. It also runs other queries
 fn bench_clock_reduction(c: &mut Criterion) {
     // Set up the bench.
-    let mut loader = bench_helper::get_uni_loader();
     let mut group = c.benchmark_group("Clock Reduction");
 
-    add_benchmark(&mut group, &mut loader, "Refinement - No reduction", REFINEMENT_QUERY, true);
-    add_benchmark(&mut group, &mut loader, "Refinement - With reduction", REFINEMENT_QUERY, false);
+    add_benchmark(
+        &mut group,
+        "Refinement - No reduction",
+        REFINEMENT_QUERY,
+        true,
+    );
+    add_benchmark(
+        &mut group,
+        "Refinement - With reduction",
+        REFINEMENT_QUERY,
+        false,
+    );
 
     group.finish();
 }
 
-fn add_benchmark(group: &mut BenchmarkGroup<WallTime>, loader: &mut Box<dyn ComponentLoader>, id: &str, input: &str, disable_clock_reduction: bool) {
+fn add_benchmark(
+    group: &mut BenchmarkGroup<WallTime>,
+    id: &str,
+    input: &str,
+    disable_clock_reduction: bool,
+) {
     GLOBAL.reset();
-    println!("{id} | {} allocated | {} freed | {} max size", format_bytes(GLOBAL.get_allocated()), format_bytes(GLOBAL.get_freed()),  format_bytes(GLOBAL.get_max_size()));
+    let mut loader = bench_helper::get_uni_loader(disable_clock_reduction);
+    println!(
+        "{id} | {} allocated | {} freed | {} max size",
+        format_bytes(GLOBAL.get_allocated()),
+        format_bytes(GLOBAL.get_freed()),
+        format_bytes(GLOBAL.get_max_size())
+    );
     group.bench_function(id, |b| {
-        loader.get_settings_mut().disable_clock_reduction = disable_clock_reduction;
-        b.iter(|| clock_reduction_helper(loader, input));
+        b.iter(|| clock_reduction_helper(&mut loader, input));
     });
-    println!("{id} | {} allocated | {} freed | {} current size | {} max size", format_bytes(GLOBAL.get_allocated()), format_bytes(GLOBAL.get_freed()), format_bytes(GLOBAL.get_current_size()),  format_bytes(GLOBAL.get_max_size()));
-
+    println!(
+        "{id} | {} allocated | {} freed | {} current size | {} max size",
+        format_bytes(GLOBAL.get_allocated()),
+        format_bytes(GLOBAL.get_freed()),
+        format_bytes(GLOBAL.get_current_size()),
+        format_bytes(GLOBAL.get_max_size())
+    );
 }
 
 fn format_bytes(bytes: u64) -> String {
@@ -122,8 +144,7 @@ fn format_bytes(bytes: u64) -> String {
 
 fn clock_reduction_helper(loader: &mut Box<dyn ComponentLoader>, input: &str) {
     let query = parse_to_query(input);
-    let executable_query = create_executable_query(query.get(0).unwrap(), loader.as_mut())
-        .unwrap();
+    let executable_query = create_executable_query(query.get(0).unwrap(), loader.as_mut()).unwrap();
     executable_query.execute();
 }
 

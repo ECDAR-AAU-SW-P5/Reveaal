@@ -70,7 +70,7 @@ fn construct_components(json: &[String]) -> Vec<ProtoComp> {
 }
 
 fn threadpool_cache(c: &mut Criterion) {
-    let mut loader = bench_helper::get_uni_loader();
+    let mut loader = bench_helper::get_uni_loader(true);
     let comps = vec![
         loader.get_component("Administration").unwrap().clone(),
         loader.get_component("Researcher").unwrap().clone(),

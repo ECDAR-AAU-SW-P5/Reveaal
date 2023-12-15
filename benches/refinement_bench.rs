@@ -111,7 +111,7 @@ fn not_refinement(c: &mut Criterion, loader: &mut Box<dyn ComponentLoader>) {
 }
 
 fn all_refinements(c: &mut Criterion) {
-    let mut loader = bench_helper::get_uni_loader();
+    let mut loader = bench_helper::get_uni_loader(true);
 
     self_refinement(c, &mut loader);
     refinement(c, &mut loader);
