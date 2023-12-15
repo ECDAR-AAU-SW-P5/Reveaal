@@ -78,81 +78,38 @@ use reveaal::parse_queries::parse_to_query;
 use reveaal::TransitionSystems::TransitionSystem;
 
 // const QUERY: &str = "refinement: (((((Adm2 && HalfAdm1 && HalfAdm2) || Machine || Researcher) && ((Adm2 && HalfAdm1) || Machine || Researcher) && ((Adm2 && HalfAdm2) || Machine || Researcher) && ((HalfAdm1 && HalfAdm2) || Machine || Researcher) && (Adm2 || Machine || Researcher)) // (Adm2 && HalfAdm1 && HalfAdm2)) // Researcher) <= (((((Adm2 && HalfAdm1 && HalfAdm2) || Machine || Researcher) && ((Adm2 && HalfAdm1) || Machine || Researcher) && ((Adm2 && HalfAdm2) || Machine || Researcher) && ((HalfAdm1 && HalfAdm2) || Machine || Researcher) && (Adm2 || Machine || Researcher)) // (Adm2 && HalfAdm1 && HalfAdm2)) // Researcher)";
-const REFINEMENT_QUERY: &str = "refinement: Researcher <= Spec // Administration // Machine";
 const REACHABILITY_QUERY: &str = "reachability: Machine || Researcher @ Machine.L5 && Researcher.L6 -> Machine.L4 && Researcher.L9";
-const CONSISTENCY_QUERY: &str = "consistency: Machine || Researcher";
-const GETCOMPONENT_QUERY: &str = "get-component: Adm2 || Machine save-as get_component_test";
 
-const LONG_MULTIPLE_QUERY: &str = "consistency: (((((Adm2 && HalfAdm1 && HalfAdm2) || Machine || Researcher2) && ((Adm2 && HalfAdm1) || Machine || Researcher2) && ((Adm2 && HalfAdm2) || Machine || Researcher2) && (Adm2 || Machine || Researcher2)) // Researcher2) // Machine); refinement: (HalfAdm1 && HalfAdm2) <= (((((Adm2 && HalfAdm1 && HalfAdm2) || Machine || Researcher2) && ((Adm2 && HalfAdm1) || Machine || Researcher2) && ((Adm2 && HalfAdm2) || Machine || Researcher2) && (Adm2 || Machine || Researcher2)) // Researcher2) // Machine)";
-const LONG_REFINEMENT_QUERY: &str = "refinement: (((((Adm2 && HalfAdm1 && HalfAdm2) || Machine || Researcher) && ((Adm2 && HalfAdm1) || Machine || Researcher) && ((Adm2 && HalfAdm2) || Machine || Researcher) && ((HalfAdm1 && HalfAdm2) || Machine || Researcher) && (Adm2 || Machine || Researcher)) // (Adm2 && HalfAdm1 && HalfAdm2)) // Researcher) <= (((((Adm2 && HalfAdm1 && HalfAdm2) || Machine || Researcher) && ((Adm2 && HalfAdm1) || Machine || Researcher) && ((Adm2 && HalfAdm2) || Machine || Researcher) && ((HalfAdm1 && HalfAdm2) || Machine || Researcher) && (Adm2 || Machine || Researcher)) // (Adm2 && HalfAdm1 && HalfAdm2)) // Researcher)";
+const COMPONENT_CLOCKS_QUERY: &str = "consistency: (((((Adm2 && HalfAdm1 && HalfAdm2) || Machine || Researcher2) && ((Adm2 && HalfAdm1) || Machine || Researcher2) && ((Adm2 && HalfAdm2) || Machine || Researcher2) && (Adm2 || Machine || Researcher2)) // Researcher2) // Machine); refinement: (HalfAdm1 && HalfAdm2) <= (((((Adm2 && HalfAdm1 && HalfAdm2) || Machine || Researcher2) && ((Adm2 && HalfAdm1) || Machine || Researcher2) && ((Adm2 && HalfAdm2) || Machine || Researcher2) && (Adm2 || Machine || Researcher2)) // Researcher2) // Machine)";
 
 /// This bench runs `REFINEMENT QUERY` with and without clock reduction such that you can compare the results. It also runs other queries
 fn bench_clock_reduction(c: &mut Criterion) {
     // Set up the bench.
     let mut group = c.benchmark_group("Clock Reduction");
 
-    // add_benchmark(
-    //     &mut group,
-    //     "Refinement - No reduction",
-    //     REFINEMENT_QUERY,
-    //     true,
-    // );
-    // add_benchmark(
-    //     &mut group,
-    //     "Refinement - With reduction",
-    //     REFINEMENT_QUERY,
-    //     false,
-    // );
-    //
-    // add_benchmark(
-    //     &mut group,
-    //     "Reachability - No reduction",
-    //     REACHABILITY_QUERY,
-    //     true,
-    // );
-    // add_benchmark(
-    //     &mut group,
-    //     "Reachability - With reduction",
-    //     REACHABILITY_QUERY,
-    //     false,
-    // );
-    //
-    // add_benchmark(
-    //     &mut group,
-    //     "Consistency - No reduction",
-    //     CONSISTENCY_QUERY,
-    //     true,
-    // );
-    // add_benchmark(
-    //     &mut group,
-    //     "Consistency - With reduction",
-    //     CONSISTENCY_QUERY,
-    //     false,
-    // );
-    //
-    // add_benchmark(
-    //     &mut group,
-    //     "Get component - No reduction",
-    //     GETCOMPONENT_QUERY,
-    //     true,
-    // );
-    // add_benchmark(
-    //     &mut group,
-    //     "Get component - With reduction",
-    //     GETCOMPONENT_QUERY,
-    //     false,
-    // );
-
     add_benchmark(
         &mut group,
-        "Long multiple - No reduction",
-        LONG_MULTIPLE_QUERY,
+        "Reachability - No reduction",
+        REACHABILITY_QUERY,
         true,
     );
     add_benchmark(
         &mut group,
-        "Long multiple - With reduction",
-        LONG_MULTIPLE_QUERY,
+        "Reachability - With reduction",
+        REACHABILITY_QUERY,
+        false,
+    );
+
+    add_benchmark(
+        &mut group,
+        "Component clocks - No reduction",
+        COMPONENT_CLOCKS_QUERY,
+        true,
+    );
+    add_benchmark(
+        &mut group,
+        "Component clocks - With reduction",
+        COMPONENT_CLOCKS_QUERY,
         false,
     );
 
@@ -165,8 +122,8 @@ fn add_benchmark(
     input: &str,
     disable_clock_reduction: bool,
 ) {
-    let mut loader = get_uni_loader(disable_clock_reduction);
     let clocks = {
+        let mut loader = get_uni_loader(disable_clock_reduction);
         let query = parse_to_query(input);
         let executable_query =
             create_executable_query(query.get(0).unwrap(), loader.as_mut()).unwrap();
@@ -176,14 +133,18 @@ fn add_benchmark(
     println!("Clocks: {}", clocks);
     GLOBAL.reset();
     let mut max = 0;
-    let b = group.bench_function(id, |b| {
+    let mut i = 0;
+    group.bench_function(id, |b| {
         GLOBAL.reset();
+        let mut loader = get_uni_loader(disable_clock_reduction);
         loader.get_settings_mut().disable_clock_reduction = disable_clock_reduction;
         b.iter(|| clock_reduction_helper(&mut loader, input));
-        max += GLOBAL.get_max_size() / SAMPLES;
+        max += GLOBAL.get_max_size();
+        i += 1;
     });
+    max /= i;
     println!("Memory | clocks");
-    println!("{{{}}}{{{}}}", format_bytes(GLOBAL.get_max_size()), clocks);
+    println!("{{{}}}{{{}}}", format_bytes(max), clocks);
 }
 
 fn format_bytes(bytes: u64) -> String {

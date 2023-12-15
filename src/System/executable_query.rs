@@ -106,7 +106,7 @@ impl ExecutableQuery for ReachabilityExecutor {
     }
 
     fn get_dim(&self) -> ClockIndex {
-        self.get_dim()
+        self.transition_system.get_dim()
     }
 }
 
@@ -129,7 +129,7 @@ impl<'a> ExecutableQuery for GetComponentExecutor<'a> {
     }
 
     fn get_dim(&self) -> ClockIndex {
-        self.get_dim()
+        self.system.get_dim()
     }
 }
 
@@ -143,7 +143,7 @@ impl ExecutableQuery for ConsistencyExecutor {
     }
 
     fn get_dim(&self) -> ClockIndex {
-        self.get_dim()
+        self.system.get_dim()
     }
 }
 
@@ -157,6 +157,6 @@ impl ExecutableQuery for DeterminismExecutor {
     }
 
     fn get_dim(&self) -> ClockIndex {
-        self.get_dim()
+        self.system.get_dim()
     }
 }

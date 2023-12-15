@@ -1,6 +1,6 @@
 {
   "name": "Researcher2",
-  "declarations": "clock x; clock y; clock z",
+  "declarations": "clock x, y, z;",
   "locations": [
     {
       "id": "L7",
