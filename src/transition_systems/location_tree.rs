@@ -3,7 +3,8 @@ use std::rc::Rc;
 use edbm::{util::constraints::ClockIndex, zones::OwnedFederation};
 
 use crate::edge_eval::constraint_applier::apply_constraints_to_state;
-use crate::model_objects::{Declarations, Location, LocationType};
+use crate::model_objects::declarations::Declarations;
+use crate::model_objects::{Location, LocationType};
 
 use super::LocationID;
 
@@ -84,7 +85,7 @@ impl LocationTree {
         })
     }
 
-    //Merge two locations keeping the invariants seperate
+    // Merge two locations keeping the invariants separate
     pub fn merge_as_quotient(left: Rc<Self>, right: Rc<Self>) -> Rc<Self> {
         let id = LocationID::Quotient(Box::new(left.id.clone()), Box::new(right.id.clone()));
 

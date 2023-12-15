@@ -124,6 +124,9 @@ impl ComposedTransitionSystem for Composition {
     fn get_dim(&self) -> ClockIndex {
         self.dim
     }
+    fn set_dim(&mut self, dim: ClockIndex) {
+        self.dim = dim;
+    }
 
     fn get_input_actions(&self) -> HashSet<String> {
         self.inputs.clone()

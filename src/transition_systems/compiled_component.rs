@@ -1,9 +1,13 @@
-use crate::model_objects::{Component, DeclarationProvider, Declarations, State, Transition};
+use crate::model_objects::declarations::{DeclarationProvider, Declarations};
+use crate::model_objects::{Component, State, Transition};
 use crate::system::local_consistency::{self};
 use crate::system::query_failures::{
     ActionFailure, ConsistencyResult, DeterminismResult, SystemRecipeFailure,
 };
 use crate::system::specifics::SpecificLocation;
+use crate::transition_systems::clock_reduction::clock_removal::{
+    rebuild_bounds, remove_clocks_from_federation, remove_clocks_from_location,
+};
 use crate::transition_systems::{LocationTree, TransitionSystem, TransitionSystemPtr};
 use edbm::util::bounds::Bounds;
 use edbm::util::constraints::ClockIndex;
@@ -11,6 +15,7 @@ use std::collections::hash_set::HashSet;
 use std::collections::HashMap;
 use std::iter::FromIterator;
 use std::rc::Rc;
+use CompositionType::Simple;
 
 use super::transition_system::ComponentInfoTree;
 use super::{CompositionType, LocationID};
@@ -110,6 +115,11 @@ impl CompiledComponent {
     fn _comp_info(&self) -> &ComponentInfo {
         &self.comp_info
     }
+
+    /// Should only ever be borrowed
+    pub fn get_component_decls(&self) -> &Declarations {
+        &self.comp_info.declarations
+    }
 }
 
 impl TransitionSystem for CompiledComponent {
@@ -169,7 +179,7 @@ impl TransitionSystem for CompiledComponent {
         self.locations.values().cloned().collect()
     }
 
-    fn get_decls(&self) -> Vec<&Declarations> {
+    fn get_all_system_decls(&self) -> Vec<&Declarations> {
         vec![&self.comp_info.declarations]
     }
 
@@ -192,7 +202,7 @@ impl TransitionSystem for CompiledComponent {
     }
 
     fn get_composition_type(&self) -> CompositionType {
-        CompositionType::Simple
+        Simple
     }
 
     fn get_location(&self, id: &LocationID) -> Option<Rc<LocationTree>> {
@@ -232,5 +242,64 @@ impl TransitionSystem for CompiledComponent {
                 unreachable!("Should not happen at the level of a component.")
             }
         }
+    }
+
+    fn remove_clocks(
+        &mut self,
+        clocks: &[ClockIndex],
+        shrink_expand_src: &[bool],
+        shrink_expand_dst: &[bool],
+    ) -> Result<(), String> {
+        // Remove clocks from Declarations
+        self.comp_info.declarations.remove_clocks(clocks);
+
+        let shrink_expand_src = &shrink_expand_src.to_vec();
+        let shrink_expand_dst = &shrink_expand_dst.to_vec();
+        // Remove clocks from Locations
+        for loc in self.locations.values_mut() {
+            remove_clocks_from_location(loc, clocks, shrink_expand_src, shrink_expand_dst);
+        }
+        // Remove clocks from initial location
+        if let Some(loc) = &mut self.initial_location {
+            remove_clocks_from_location(loc, clocks, shrink_expand_src, shrink_expand_dst);
+        }
+        // Remove clocks from Edges
+        for edge in self.location_edges.values_mut() {
+            for (_, transition) in edge.iter_mut() {
+                // Remove clocks from Guard
+                transition.guard_zone = remove_clocks_from_federation(
+                    transition.guard_zone.clone(),
+                    clocks,
+                    shrink_expand_src,
+                    shrink_expand_dst,
+                );
+
+                // Remove clocks from Updates
+                transition
+                    .updates
+                    .retain(|update| !clocks.contains(&update.clock_index));
+
+                //move clocks to the left in Updates
+                for update in &mut transition.updates {
+                    let clocks_less = clocks.partition_point(|clock| clock < &update.clock_index);
+                    update.clock_index -= clocks_less;
+                }
+
+                // Remove clocks from target locations (supposedly they're not updated when iterating self.locations)
+                remove_clocks_from_location(
+                    &mut transition.target_locations,
+                    clocks,
+                    shrink_expand_src,
+                    shrink_expand_dst,
+                );
+            }
+        }
+
+        // Rebuild max bounds
+        self.comp_info.max_bounds = rebuild_bounds(&self.comp_info.max_bounds, self.dim, clocks);
+
+        self.dim -= clocks.len();
+
+        Ok(())
     }
 }

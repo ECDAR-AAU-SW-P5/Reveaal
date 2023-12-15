@@ -5,7 +5,8 @@ use std::rc::Rc;
 use edbm::util::constraints::{Conjunction, Constraint, Disjunction, Inequality, RawInequality};
 use edbm::zones::OwnedFederation;
 
-use crate::model_objects::{Component, Decision, Declarations, State};
+use crate::model_objects::declarations::Declarations;
+use crate::model_objects::{Component, Decision, State};
 use crate::protobuf_server::services::{
     clock::Clock as ClockEnum, Clock as ProtoClock, ComponentsInfo, Constraint as ProtoConstraint,
     Decision as ProtoDecision, Disjunction as ProtoDisjunction, LocationTree as ProtoLocationTree,

@@ -2,14 +2,15 @@ use edbm::util::constraints::ClockIndex;
 use edbm::zones::OwnedFederation;
 use log::debug;
 
-use crate::edge_eval::updater::CompiledUpdate;
-use crate::model_objects::{Declarations, State, Transition};
+use crate::model_objects::{State, Transition};
 use crate::system::query_failures::{
     ActionFailure, ConsistencyResult, DeterminismResult, SystemRecipeFailure,
 };
 use crate::system::specifics::{SpecialLocation, SpecificLocation};
+use crate::transition_systems::compiled_update::CompiledUpdate;
 use edbm::util::bounds::Bounds;
 
+use crate::model_objects::declarations::Declarations;
 use crate::transition_systems::{
     LocationTree, TransitionID, TransitionSystem, TransitionSystemPtr,
 };
@@ -112,6 +113,10 @@ impl Quotient {
             dim,
         });
         Ok(ts)
+    }
+
+    fn get_children_mut(&mut self) -> (&mut TransitionSystemPtr, &mut TransitionSystemPtr) {
+        (&mut self.t, &mut self.s)
     }
 }
 
@@ -359,9 +364,9 @@ impl TransitionSystem for Quotient {
         location_trees
     }
 
-    fn get_decls(&self) -> Vec<&Declarations> {
-        let mut comps = self.t.get_decls();
-        comps.extend(self.s.get_decls());
+    fn get_all_system_decls(&self) -> Vec<&Declarations> {
+        let mut comps = self.t.get_all_system_decls();
+        comps.extend(self.s.get_all_system_decls());
         comps.push(&self.decls);
         comps
     }
@@ -408,6 +413,22 @@ impl TransitionSystem for Quotient {
             }
             SpecificLocation::ComponentLocation { .. } => unreachable!("Should not occur"),
         }
+    }
+
+    fn remove_clocks(
+        &mut self,
+        clocks: &[ClockIndex],
+        shrink_expand_src: &[bool],
+        shrink_expand_dst: &[bool],
+    ) -> Result<(), String> {
+        let clocks_less = clocks.partition_point(|clock| clock < &self.quotient_clock_index);
+        self.quotient_clock_index -= clocks_less;
+
+        let (a, b) = self.get_children_mut();
+        a.remove_clocks(clocks, shrink_expand_src, shrink_expand_dst)?;
+        b.remove_clocks(clocks, shrink_expand_src, shrink_expand_dst)?;
+        self.dim -= clocks.len(); // +1 for quotient
+        Ok(())
     }
 }
 

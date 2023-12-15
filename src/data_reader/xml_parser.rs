@@ -1,7 +1,8 @@
 use crate::data_reader::parse_edge;
 use crate::data_reader::parse_edge::Update;
+use crate::model_objects::declarations::Declarations;
 use crate::model_objects::{
-    Component, Declarations, Edge, Location, LocationType, Query, SyncType, SystemDeclarations,
+    Component, Edge, Location, LocationType, Query, SyncType, SystemDeclarations,
     SystemSpecification,
 };
 use edbm::util::constraints::ClockIndex;

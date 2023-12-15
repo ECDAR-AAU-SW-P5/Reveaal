@@ -5,8 +5,9 @@ use itertools::Itertools;
 
 use crate::edge_eval::constraint_applier::apply_constraints_to_state;
 use crate::extract_system_rep::SystemRecipe;
+use crate::model_objects::declarations::Declarations;
 use crate::model_objects::expressions::{BoolExpression, ComponentVariable, StateExpression};
-use crate::model_objects::{Declarations, State};
+use crate::model_objects::State;
 use crate::transition_systems::{CompositionType, LocationID, LocationTree, TransitionSystemPtr};
 
 /// This function takes a [`StateExpression`], the system recipe, and the transitionsystem -

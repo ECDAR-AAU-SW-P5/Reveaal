@@ -14,6 +14,7 @@ use crate::transition_systems::{
 use super::executable_query::SyntaxExecutor;
 use super::query_failures::{SyntaxResult, SystemRecipeFailure};
 use crate::system::pruning;
+use crate::transition_systems::clock_reduction::reduction::clock_reduce;
 use edbm::util::constraints::ClockIndex;
 use log::debug;
 use simple_error::bail;
@@ -57,20 +58,26 @@ pub fn create_executable_query<'a>(
                         .unwrap();
 
                 let mut component_index = 0;
+                let mut left_ts = left.compile_with_index(dim, &mut component_index)?;
+                let mut right_ts = right.compile_with_index(dim, &mut component_index)?;
+
+                if !component_loader.get_settings().disable_clock_reduction {
+                    clock_reduce(&mut left_ts, Some(&mut right_ts), &mut dim, quotient_index);
+                }
 
                 Ok(Box::new(RefinementExecutor {
-                    sys1: left.compile_with_index(dim, &mut component_index)?,
-                    sys2: right.compile_with_index(dim, &mut component_index)?,
+                    sys1: left_ts,
+                    sys2: right_ts,
                 }))
             }
             QueryExpression::Reachability { system, from, to } => {
-                let machine =
+                let recipe =
                     get_system_recipe(system, component_loader, &mut dim, &mut None).unwrap();
-                let transition_system = machine.clone().compile(dim)?;
+                let transition_system = recipe.clone().compile(dim)?;
 
                 // Assign the start state to the initial state of the transition system if no start state is given by the query
                 let start_state: State = if let Some(state) = from.as_ref() {
-                    let state = get_state(state, &machine, &transition_system)
+                    let state = get_state(state, &recipe, &transition_system)
                         .map_err(|err| format!("Invalid Start state: {}", err))?;
                     if state.decorated_locations.id.is_partial_location() {
                         return Err("Start state is a partial state, which it must not be".into());
@@ -83,7 +90,7 @@ pub fn create_executable_query<'a>(
                     }
                 };
 
-                let end_state: State = get_state(to, &machine, &transition_system)
+                let end_state: State = get_state(to, &recipe, &transition_system)
                     .map_err(|err| format!("Invalid End state: {}", err))?;
 
                 Ok(Box::new(ReachabilityExecutor {
@@ -92,43 +99,41 @@ pub fn create_executable_query<'a>(
                     end_state,
                 }))
             }
-            QueryExpression::Consistency(query_expression) => {
+            QueryExpression::Consistency(system) => {
                 let mut quotient_index = None;
-                let recipe = get_system_recipe(
-                    query_expression,
-                    component_loader,
-                    &mut dim,
-                    &mut quotient_index,
-                )
-                .unwrap();
+                let recipe =
+                    get_system_recipe(system, component_loader, &mut dim, &mut quotient_index)
+                        .unwrap();
+                let mut transition_system = recipe.compile(dim)?;
+
+                if !component_loader.get_settings().disable_clock_reduction {
+                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index);
+                }
 
                 Ok(Box::new(ConsistencyExecutor {
-                    system: recipe.compile(dim)?,
+                    system: transition_system,
                 }))
             }
-            QueryExpression::Syntax(query_expression) => {
+            QueryExpression::Syntax(system) => {
                 let mut quotient_index = None;
-                let recipe = get_system_recipe(
-                    query_expression,
-                    component_loader,
-                    &mut dim,
-                    &mut quotient_index,
-                );
+                let recipe =
+                    get_system_recipe(system, component_loader, &mut dim, &mut quotient_index);
 
                 Ok(Box::new(SyntaxExecutor { result: recipe }))
             }
-            QueryExpression::Determinism(query_expression) => {
+            QueryExpression::Determinism(system) => {
                 let mut quotient_index = None;
-                let recipe = get_system_recipe(
-                    query_expression,
-                    component_loader,
-                    &mut dim,
-                    &mut quotient_index,
-                )
-                .unwrap();
+                let recipe =
+                    get_system_recipe(system, component_loader, &mut dim, &mut quotient_index)
+                        .unwrap();
+                let mut transition_system = recipe.compile(dim)?;
+
+                if !component_loader.get_settings().disable_clock_reduction {
+                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index);
+                }
 
                 Ok(Box::new(DeterminismExecutor {
-                    system: recipe.compile(dim)?,
+                    system: transition_system,
                 }))
             }
             QueryExpression::GetComponent(SaveExpression { system, name }) => {
@@ -136,9 +141,14 @@ pub fn create_executable_query<'a>(
                 let recipe =
                     get_system_recipe(system, component_loader, &mut dim, &mut quotient_index)
                         .unwrap();
+                let mut transition_system = recipe.compile(dim)?;
+
+                if !component_loader.get_settings().disable_clock_reduction {
+                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index);
+                }
 
                 Ok(Box::new(GetComponentExecutor {
-                    system: recipe.compile(dim)?,
+                    system: transition_system,
                     comp_name: name.clone().unwrap_or("Unnamed".to_string()),
                     component_loader,
                 }))
@@ -148,9 +158,14 @@ pub fn create_executable_query<'a>(
                 let recipe =
                     get_system_recipe(system, component_loader, &mut dim, &mut quotient_index)
                         .unwrap();
+                let mut transition_system = recipe.compile(dim)?;
+
+                if !component_loader.get_settings().disable_clock_reduction {
+                    clock_reduce(&mut transition_system, None, &mut dim, quotient_index);
+                }
 
                 Ok(Box::new(GetComponentExecutor {
-                    system: pruning::prune_system(recipe.compile(dim)?, dim),
+                    system: pruning::prune_system(transition_system, dim),
                     comp_name: name.clone().unwrap_or("Unnamed".to_string()),
                     component_loader,
                 }))
@@ -277,7 +292,6 @@ pub fn get_system_recipe(
             let mut component = component_loader.get_component(name)?.clone();
             component.set_clock_indices(clock_index);
             component.special_id = id.clone();
-            // Logic for locations
             debug!("{} Clocks: {:?}", name, component.declarations.clocks);
 
             Ok(Box::new(SystemRecipe::Component(Box::new(component))))

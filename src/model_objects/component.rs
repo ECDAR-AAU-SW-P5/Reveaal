@@ -3,14 +3,15 @@ use crate::data_reader::serialization::{decode_declarations, DummyComponent};
 use edbm::util::bounds::Bounds;
 use edbm::util::constraints::ClockIndex;
 
+use crate::model_objects::declarations::{DeclarationProvider, Declarations};
 use crate::model_objects::{Edge, Location, SyncType};
 use itertools::Itertools;
-use log::info;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::Entry;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::iter::FromIterator;
+use log::info;
 
 /// Errors related to reducing clocks
 #[derive(Debug)]
@@ -403,53 +404,6 @@ impl Component {
                 self.name
             ); // Should be changed in the future to be the information logger
         }
-    }
-}
-
-pub trait DeclarationProvider {
-    fn get_declarations(&self) -> &Declarations;
-}
-
-/// The declaration struct is used to hold the indices for each clock, and is meant to be the owner of int variables once implemented
-#[derive(Debug, Deserialize, Clone, PartialEq, Eq, Serialize)]
-pub struct Declarations {
-    pub ints: HashMap<String, i32>,
-    pub clocks: HashMap<String, ClockIndex>,
-}
-
-impl Declarations {
-    pub fn empty() -> Declarations {
-        Declarations {
-            ints: HashMap::new(),
-            clocks: HashMap::new(),
-        }
-    }
-
-    pub fn remove_clock_from_dcls(&mut self, clock: &str) {
-        self.clocks.remove(clock);
-    }
-
-    pub fn get_clock_count(&self) -> usize {
-        self.clocks.values().collect::<HashSet<_>>().len()
-    }
-
-    pub fn set_clock_indices(&mut self, start_index: ClockIndex) {
-        for (_, v) in self.clocks.iter_mut() {
-            *v += start_index
-        }
-    }
-
-    pub fn get_clock_index_by_name(&self, name: &str) -> Option<&ClockIndex> {
-        self.clocks.get(name)
-    }
-
-    /// Gets the name of a given `ClockIndex`.
-    /// Returns `None` if it does not exist in the declarations
-    pub fn get_clock_name_by_index(&self, index: ClockIndex) -> Option<&String> {
-        self.clocks
-            .iter()
-            .find(|(_, v)| **v == index)
-            .map(|(k, _)| k)
     }
 }
 
