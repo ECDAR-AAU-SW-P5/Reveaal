@@ -1,8 +1,8 @@
 #[cfg(test)]
-mod saving_transitionid_test {
+mod saving_transition_id_test {
+    use crate::model_objects::expressions::SystemExpression;
+    use crate::system::save_component::{combine_components, PruningStrategy};
     use crate::tests::reachability::helper_functions::reachability_test_helper_functions;
-    use crate::ModelObjects::Expressions::SystemExpression;
-    use crate::System::save_component::{combine_components, PruningStrategy};
     use std::collections::HashSet;
     use std::iter::FromIterator;
     use test_case::test_case;
@@ -33,10 +33,10 @@ mod saving_transitionid_test {
             "E11".to_string()
             ]; "Conjunction save HalfAdm1 and HalfAdm2")]
     fn transition_save_id_checker(
-        machineExpression: SystemExpression,
+        machine_expression: SystemExpression,
         transition_ids: Vec<String>,
     ) {
-        let mock_model = Box::new(machineExpression);
+        let mock_model = Box::new(machine_expression);
         let mut expected_ids: HashSet<&String> = HashSet::from_iter(transition_ids.iter());
         let (_, system) = reachability_test_helper_functions::create_system_recipe_and_machine(
             *mock_model,

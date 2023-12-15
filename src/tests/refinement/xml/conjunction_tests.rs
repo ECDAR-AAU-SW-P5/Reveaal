@@ -1,16 +1,16 @@
 #[cfg(test)]
 mod test {
-    use crate::tests::refinement::Helper::xml_refinement_check;
+    use crate::tests::refinement::helper::xml_refinement_check;
 
     const PATH: &str = "samples/xml/conjun.xml";
 
     #[test]
-    fn P0ConjP1RefP2() {
+    fn p0_conj_p1_ref_p2() {
         assert!(!xml_refinement_check(PATH, "refinement: P0 && P1 <= P2"));
     }
 
     #[test]
-    fn P7ConjP8ConjP9RefP10() {
+    fn p7_conj_p8_conj_p9_ref_p10() {
         assert!(!xml_refinement_check(
             PATH,
             "refinement: P7 && P8 && P9 <= P10"
@@ -18,7 +18,7 @@ mod test {
     }
 
     #[test]
-    fn P11ConjP12RefP13() {
+    fn p11_conj_p12_ref_p13() {
         assert!(!xml_refinement_check(PATH, "refinement: P11 && P12 <= P13"));
     }
 }

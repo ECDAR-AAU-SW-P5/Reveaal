@@ -2,11 +2,10 @@
 mod reachability_parse_partial_state {
     use crate::{
         extract_system_rep::{self, ExecutableQueryError},
-        parse_queries,
+        model_objects::expressions::SystemExpression,
+        parse_queries, system,
         tests::reachability::helper_functions::reachability_test_helper_functions,
         JsonProjectLoader,
-        ModelObjects::Expressions::SystemExpression,
-        System,
     };
     use test_case::test_case;
 
@@ -27,7 +26,7 @@ mod reachability_parse_partial_state {
 
         let mock_state = reachability_test_helper_functions::string_to_state_expr(location_str);
 
-        let result = System::extract_state::get_state(&mock_state, &machine, &system);
+        let result = system::extract_state::get_state(&mock_state, &machine, &system);
 
         if let Ok(end_state) = result {
             assert_eq!(

@@ -2,10 +2,11 @@
 mod reachability_transition_id_test {
     use std::collections::HashSet;
     use std::iter::FromIterator;
+    use std::rc::Rc;
 
+    use crate::model_objects::expressions::SystemExpression;
     use crate::tests::reachability::helper_functions::reachability_test_helper_functions;
-    use crate::ModelObjects::Expressions::SystemExpression;
-    use crate::TransitionSystems::TransitionID;
+    use crate::transition_systems::TransitionID;
     use test_case::test_case;
     const FOLDER_PATH: &str = "samples/json/EcdarUniversity";
 
@@ -70,10 +71,10 @@ mod reachability_transition_id_test {
             )
             ]; "Conjunction HalfAdm1 and HalfAdm2")]
     fn transition_id_checker(
-        machineExpression: SystemExpression,
+        machine_expression: SystemExpression,
         transition_ids: Vec<TransitionID>,
     ) {
-        let mock_model = Box::new(machineExpression);
+        let mock_model = Box::new(machine_expression);
         let mut expected_ids: HashSet<&TransitionID> = HashSet::from_iter(transition_ids.iter());
         let (_, system) = reachability_test_helper_functions::create_system_recipe_and_machine(
             *mock_model,
@@ -81,7 +82,7 @@ mod reachability_transition_id_test {
         );
         for loc in system.get_all_locations() {
             for ac in system.get_actions() {
-                for tran in system.next_transitions(&loc, &ac) {
+                for tran in system.next_transitions(Rc::clone(&loc), &ac) {
                     if expected_ids.contains(&tran.id) {
                         expected_ids.remove(&tran.id);
                     } else {

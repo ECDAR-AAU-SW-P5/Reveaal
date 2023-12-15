@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod reachability_parser_location_validation {
     use crate::{
+        model_objects::expressions::SystemExpression, system,
         tests::reachability::helper_functions::reachability_test_helper_functions,
-        ModelObjects::Expressions::SystemExpression, System,
     };
     use test_case::test_case;
     const FOLDER_PATH: &str = "samples/json/EcdarUniversity";
@@ -24,10 +24,7 @@ mod reachability_parser_location_validation {
 
         let mock_state = reachability_test_helper_functions::string_to_state_expr(location_str);
 
-        assert!(matches!(
-            System::extract_state::get_state(&mock_state, &machine, &system),
-            Err(_)
-        ));
+        assert!(system::extract_state::get_state(&mock_state, &machine, &system).is_err());
     }
 
     #[test_case("Adm2.L20";
@@ -43,9 +40,7 @@ mod reachability_parser_location_validation {
             );
 
         let mock_state = reachability_test_helper_functions::string_to_state_expr(location_str);
-        assert!(matches!(
-            System::extract_state::get_state(&mock_state, &machine, &system),
-            Ok(_)
-        ));
+
+        assert!(system::extract_state::get_state(&mock_state, &machine, &system).is_ok());
     }
 }

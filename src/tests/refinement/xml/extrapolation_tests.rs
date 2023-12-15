@@ -6,7 +6,7 @@ mod test {
 
     // Self Refinements
     #[test]
-    fn InfRefinesInf() {
+    fn inf_refines_inf() {
         assert!(xml_refinement_check(PATH, "refinement: Inf <= Inf"));
     }
 }

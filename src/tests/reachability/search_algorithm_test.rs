@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod reachability_search_algorithm_test {
 
-    use crate::tests::refinement::Helper::json_run_query;
-    use crate::System::query_failures::QueryResult;
+    use crate::system::query_failures::QueryResult;
+    use crate::tests::refinement::helper::json_run_query;
     use test_case::test_case;
 
     const PATH: &str = "samples/json/EcdarUniversity";

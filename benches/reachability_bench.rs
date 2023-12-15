@@ -3,7 +3,7 @@ pub mod bench_helper;
 pub mod flamegraph;
 use flamegraph::flamegraph_profiler::FlamegraphProfiler;
 use reveaal::extract_system_rep::create_executable_query;
-use reveaal::ModelObjects::Query;
+use reveaal::model_objects::Query;
 use reveaal::{parse_queries, ComponentLoader};
 
 fn bench_reachability(c: &mut Criterion, query: &str, loader: &mut Box<dyn ComponentLoader>) {

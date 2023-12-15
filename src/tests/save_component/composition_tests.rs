@@ -6,117 +6,117 @@ mod test {
     const ECDAR_UNI: &str = "samples/json/EcdarUniversity";
 
     #[test]
-    fn Adm2MachineSavedRefinesSelf() {
+    fn adm_2_machine_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Adm2 || Machine");
     }
 
     #[test]
-    fn Adm2Machine2SavedRefinesSelf() {
+    fn adm_2_machine_2_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Adm2 || Machine2");
     }
 
     #[test]
-    fn Adm2Machine3SavedRefinesSelf() {
+    fn adm_2_machine_3_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Adm2 || Machine3");
     }
 
     #[test]
-    fn Adm2ResearcherSavedRefinesSelf() {
+    fn adm_2_researcher_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Adm2 || Researcher");
     }
 
     #[test]
-    fn AdministrationMachineSavedRefinesSelf() {
+    fn administration_machine_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Administration || Machine");
     }
 
     #[test]
-    fn AdministrationMachine2SavedRefinesSelf() {
+    fn administration_machine_2_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Administration || Machine2");
     }
 
     #[test]
-    fn AdministrationMachine3SavedRefinesSelf() {
+    fn administration_machine_3_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Administration || Machine3");
     }
 
     #[test]
-    fn AdministrationResearcherSavedRefinesSelf() {
+    fn administration_researcher_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Administration || Researcher");
     }
 
     #[test]
-    fn HalfAdm1MachineSavedRefinesSelf() {
+    fn half_adm_1_machine_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "HalfAdm1 || Machine");
     }
 
     #[test]
-    fn HalfAdm1Machine2SavedRefinesSelf() {
+    fn half_adm_1_machine_2_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "HalfAdm1 || Machine2");
     }
 
     #[test]
-    fn HalfAdm1Machine3SavedRefinesSelf() {
+    fn half_adm_1_machine_3_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "HalfAdm1 || Machine3");
     }
 
     #[test]
-    fn HalfAdm1ResearcherSavedRefinesSelf() {
+    fn half_adm_1_researcher_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "HalfAdm1 || Researcher");
     }
 
     #[test]
-    fn HalfAdm2MachineSavedRefinesSelf() {
+    fn half_adm_2_machine_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "HalfAdm2 || Machine");
     }
 
     #[test]
-    fn HalfAdm2Machine2SavedRefinesSelf() {
+    fn half_adm_2_machine_2_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "HalfAdm2 || Machine2");
     }
 
     #[test]
-    fn HalfAdm2Machine3SavedRefinesSelf() {
+    fn half_adm_2_machine_3_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "HalfAdm2 || Machine3");
     }
 
     #[test]
-    fn HalfAdm2ResearcherSavedRefinesSelf() {
+    fn half_adm_2_researcher_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "HalfAdm2 || Researcher");
     }
 
     #[test]
-    fn MachineResearcherSavedRefinesSelf() {
+    fn machine_researcher_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Machine || Researcher");
     }
 
     #[test]
-    fn MachineSpecSavedRefinesSelf() {
+    fn machine_spec_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Machine || Spec");
     }
 
     #[test]
-    fn Machine2ResearcherSavedRefinesSelf() {
+    fn machine_2_researcher_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Machine2 || Researcher");
     }
 
     #[test]
-    fn Machine2SpecSavedRefinesSelf() {
+    fn machine_2_spec_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Machine2 || Spec");
     }
 
     #[test]
-    fn Machine3ResearcherSavedRefinesSelf() {
+    fn machine_3_researcher_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Machine3 || Researcher");
     }
 
     #[test]
-    fn Machine3SpecSavedRefinesSelf() {
+    fn machine_3_spec_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Machine3 || Spec");
     }
 
     #[test]
-    fn ResearcherSpecSavedRefinesSelf() {
+    fn researcher_spec_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Researcher || Spec");
     }
 }

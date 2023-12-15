@@ -6,96 +6,96 @@ mod test {
     const ECDAR_UNI: &str = "samples/json/EcdarUniversity";
 
     #[test]
-    fn T1SavedRefinesSelf() {
+    fn t1_saved_refines_self() {
         json_reconstructed_component_refines_base_self(PATH, "Test1");
     }
     #[test]
-    fn T2SavedRefinesSelf() {
+    fn t2_saved_refines_self() {
         json_reconstructed_component_refines_base_self(PATH, "Test2");
     }
     #[test]
-    fn T3SavedRefinesSelf() {
+    fn t3_saved_refines_self() {
         json_reconstructed_component_refines_base_self(PATH, "Test3");
     }
     #[test]
-    fn T4SavedRefinesSelf() {
+    fn t4_saved_refines_self() {
         json_reconstructed_component_refines_base_self(PATH, "Test4");
     }
     #[test]
-    fn T5SavedRefinesSelf() {
+    fn t5_saved_refines_self() {
         json_reconstructed_component_refines_base_self(PATH, "Test5");
     }
     #[test]
-    fn T6SavedRefinesSelf() {
+    fn t6_saved_refines_self() {
         json_reconstructed_component_refines_base_self(PATH, "Test6");
     }
     #[test]
-    fn T7SavedRefinesSelf() {
+    fn t7_saved_refines_self() {
         json_reconstructed_component_refines_base_self(PATH, "Test7");
     }
     #[test]
-    fn T8SavedRefinesSelf() {
+    fn t8_saved_refines_self() {
         json_reconstructed_component_refines_base_self(PATH, "Test8");
     }
     #[test]
-    fn T9SavedRefinesSelf() {
+    fn t9_saved_refines_self() {
         json_reconstructed_component_refines_base_self(PATH, "Test9");
     }
     #[test]
-    fn T10SavedRefinesSelf() {
+    fn t10_saved_refines_self() {
         json_reconstructed_component_refines_base_self(PATH, "Test10");
     }
     #[test]
-    fn T11SavedRefinesSelf() {
+    fn t11_saved_refines_self() {
         json_reconstructed_component_refines_base_self(PATH, "Test11");
     }
     #[test]
-    fn T12SavedRefinesSelf() {
+    fn t12_saved_refines_self() {
         json_reconstructed_component_refines_base_self(PATH, "Test12");
     }
 
     #[test]
-    fn Adm2SavedRefinesSelf() {
+    fn adm_2_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Adm2");
     }
 
     #[test]
-    fn AdministrationSavedRefinesSelf() {
+    fn administration_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Administration");
     }
 
     #[test]
-    fn HalfAdm1SavedRefinesSelf() {
+    fn half_adm1saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "HalfAdm1");
     }
 
     #[test]
-    fn HalfAdm2SavedRefinesSelf() {
+    fn half_adm_2_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "HalfAdm2");
     }
 
     #[test]
-    fn MachineSavedRefinesSelf() {
+    fn machine_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Machine");
     }
 
     #[test]
-    fn Machine2SavedRefinesSelf() {
+    fn machine_2_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Machine2");
     }
 
     #[test]
-    fn Machine3SavedRefinesSelf() {
+    fn machine_3_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Machine3");
     }
 
     #[test]
-    fn ResearcherSavedRefinesSelf() {
+    fn researcher_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Researcher");
     }
 
     #[test]
-    fn SpecSavedRefinesSelf() {
+    fn spec_saved_refines_self() {
         json_reconstructed_component_refines_base_self(ECDAR_UNI, "Spec");
     }
 }

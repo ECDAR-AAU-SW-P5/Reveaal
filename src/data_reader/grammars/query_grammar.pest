@@ -1,0 +1,108 @@
+queries = _{SOI ~ queryList ~ EOI}
+
+queryList = { query ~ (";" ~ query)*}
+
+query = {refinement | consistency | reachability | implementation | determinism | specification | getComponent | prune | bisim | syntax /*| logicFormulas*/}
+
+
+refinement = {"refinement:" ~ expr ~ "<=" ~ expr}
+
+syntax = {"syntax:" ~ component}
+
+consistency = {"consistency:" ~ expr}
+
+reachability = { "reachability:" ~ expr ~ "@" ~ (state | "init") ~ "->" ~ state }
+
+implementation = {"implementation:" ~ expr}
+
+getComponent = {"get-component:" ~ saveExpr}
+
+prune = {"prune:" ~ saveExpr}
+
+bisim = {"bisim-minim:" ~ saveExpr}
+
+determinism = {"determinism:" ~ expr}
+
+specification = {"specification:" ~ expr}
+
+saveExpr = _{  expr  ~ ("save-as" ~ variable_name)?}
+
+expr = { term ~ (featureOperator ~ term)*}
+
+term = _{ component | parenthesizedExp  }
+
+parenthesizedExp = _{ "(" ~ expr ~ ")"}
+
+component = { variable_name ~ ("[" ~ identifier ~ "]")? }
+
+////////////////////////// Boolean Expressions //////////////////////////
+
+/*logicFormulas = {possibly | invariantly | eventuallyAlways | potentially}
+
+possibly = {"E<>" ~ boolExpr} // TODO: Should include the system to be checked 
+
+invariantly = {"A[]" ~ boolExpr} // TODO: Should include the system to be checked
+
+eventuallyAlways = {"E[]" ~ boolExpr} // TODO: Should include the system to be checked
+
+potentially = {"A<>" ~ boolExpr} // TODO: Should include the system to be checked
+*/
+
+state = { boolExpr }
+
+boolExpr = _{andExpr}
+
+andExpr = { orExpr ~ (("&&" | "and") ~ orExpr)* }
+
+orExpr = { subExpr ~ (("||" | "or") ~ subExpr)* }
+
+subExpr = _{parenthesizedSubExp | notExpr | compExpr | locExpr | bool_true | bool_false}
+
+locExpr = { variable }
+
+compExpr = {boolDiff ~ operator ~ boolDiff}
+
+notExpr = {("not" | "!") ~ boolExpr}
+
+parenthesizedSubExp = _{ "(" ~ boolExpr ~ ")"}
+
+boolDiff = {boolTerm ~ ((sub_op | sum_op) ~ boolTerm)*}
+
+boolTerm = _{ atom | variable }
+
+variable = { component ~ "." ~ variable_name }
+
+////////////////////////// Identifiers and Literals //////////////////////////
+atom = _{int}
+
+bool_true = { "true" }
+bool_false = { "false" }
+
+sum_op = { "+" }
+sub_op = { "-" }
+
+variable_name = @{(ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_" )*) ~ !"-" }
+
+identifier = @{(!"[" ~ !"]" ~ ANY )+}
+
+int = @{ "0" | ASCII_NONZERO_DIGIT ~ ASCII_DIGIT* }
+
+operator = _{leq_op | geq_op | lt_op | gt_op | eq_op}
+
+leq_op = { "<=" }
+geq_op = { ">=" }
+lt_op = { "<" }
+gt_op = { ">" }
+eq_op = { "==" }
+
+
+featureOperator = _{ qoutient_op | conjunction_op | composition_op }
+
+qoutient_op = { "//" | "\\\\" }
+conjunction_op = { "&&" }
+composition_op = { "||" }
+
+WHITESPACE = _{ " " | "\n" | "\r\n" | "\t"}
+
+
+
