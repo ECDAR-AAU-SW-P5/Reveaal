@@ -40,6 +40,7 @@ pub fn combine_components(
         locations,
         edges,
         special_id: None,
+        clock_usages: Default::default(),
     }
 }
 

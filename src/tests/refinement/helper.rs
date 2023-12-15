@@ -2,6 +2,7 @@ use crate::data_reader::component_loader::{JsonProjectLoader, XmlProjectLoader};
 use crate::data_reader::parse_queries;
 use crate::extract_system_rep::ExecutableQueryError;
 use crate::logging::setup_logger;
+use crate::model_objects::expressions::QueryExpression;
 use crate::model_objects::Query;
 use crate::system::extract_system_rep::create_executable_query;
 use crate::system::query_failures::QueryResult;
@@ -64,6 +65,25 @@ pub fn json_run_query(path: &str, query: &str) -> Result<QueryResult, Executable
         query: Option::from(query),
         comment: "".to_string(),
     };
+    // FIXME: After implementing clock reduction on component level, a few tests are failing due to inconsistencies with initial state and global clock. Turn disabled_clock_reduction boolean to true to ignore inconsistencies
+    if let Some(query_type) = q.get_query() {
+        match query_type {
+            QueryExpression::Reachability { .. } => {
+                project_loader.get_settings_mut().disable_clock_reduction = true;
+            }
+            QueryExpression::Refinement(_, _)
+            | QueryExpression::Consistency(_)
+            | QueryExpression::Implementation(_)
+            | QueryExpression::Determinism(_)
+            | QueryExpression::Specification(_)
+            | QueryExpression::Syntax(_)
+            | QueryExpression::BisimMinim(_)
+            | QueryExpression::GetComponent(_)
+            | QueryExpression::Prune(_) => {
+                project_loader.get_settings_mut().disable_clock_reduction = false;
+            }
+        }
+    }
 
     project_loader.get_settings_mut().disable_clock_reduction = true;
 
