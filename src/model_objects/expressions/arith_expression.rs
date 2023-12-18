@@ -3,6 +3,7 @@ use edbm::util::constraints::ClockIndex;
 
 use serde::Deserialize;
 
+use crate::model_objects::ClockReduceError;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
@@ -19,6 +20,47 @@ pub enum ArithExpression {
 }
 
 impl ArithExpression {
+    pub fn get_evaluated_int(&self) -> Result<i32, ClockReduceError> {
+        match self {
+            ArithExpression::Difference(left, right) => {
+                Ok(left.get_evaluated_int()? - right.get_evaluated_int()?)
+            }
+            ArithExpression::Addition(left, right) => {
+                Ok(left.get_evaluated_int()? + right.get_evaluated_int()?)
+            }
+            ArithExpression::Multiplication(left, right) => {
+                Ok(left.get_evaluated_int()? * right.get_evaluated_int()?)
+            }
+            ArithExpression::Division(left, right) => {
+                let divide_with = right.get_evaluated_int()?;
+                if divide_with == 0 {
+                    Err(ClockReduceError::EvaluationError(
+                        "Division with zero".to_string(),
+                    ))
+                } else {
+                    Ok(left.get_evaluated_int()? / divide_with)
+                }
+            }
+            ArithExpression::Modulo(left, right) => {
+                let modulo_with = right.get_evaluated_int()?;
+                if modulo_with == 0 {
+                    Err(ClockReduceError::EvaluationError(
+                        "Modulo with zero".to_string(),
+                    ))
+                } else {
+                    Ok(left.get_evaluated_int()? % modulo_with)
+                }
+            }
+            ArithExpression::Clock(_) => Err(ClockReduceError::EvaluationError(
+                "This function cant work with clock_index".to_string(),
+            )),
+            ArithExpression::VarName(_) => Err(ClockReduceError::EvaluationError(
+                "This function cant work with clock_names".to_string(),
+            )),
+            ArithExpression::Int(value) => Ok(*value),
+        }
+    }
+
     pub fn swap_clock_names(
         &self,
         from_vars: &HashMap<String, ClockIndex>,
@@ -391,34 +433,57 @@ impl ArithExpression {
         }
     }
 
-    /// Finds the clock names used in the expression
-    pub fn has_varname(&self, name: &String) -> bool {
+    /// Checks if the clock name is used in the expression.
+    pub fn has_var_name(&self, name: &String) -> bool {
         match self {
             ArithExpression::Difference(a1, a2)
             | ArithExpression::Addition(a1, a2)
             | ArithExpression::Multiplication(a1, a2)
             | ArithExpression::Division(a1, a2)
-            | ArithExpression::Modulo(a1, a2) => a1.has_varname(name) || a2.has_varname(name),
+            | ArithExpression::Modulo(a1, a2) => a1.has_var_name(name) || a2.has_var_name(name),
             ArithExpression::Clock(_) | ArithExpression::Int(_) => false,
             ArithExpression::VarName(n) => name == n,
+        }
+    }
+
+    pub fn get_var_names(&self) -> Vec<String> {
+        let mut vec = vec![];
+        self.get_var_names_rec(&mut vec);
+        vec
+    }
+
+    /// Finds the clocks used in the expression and puts them into result_clocks.
+    pub fn get_var_names_rec(&self, result_clocks: &mut Vec<String>) {
+        match self {
+            ArithExpression::Difference(ref left, ref right)
+            | ArithExpression::Addition(ref left, ref right)
+            | ArithExpression::Multiplication(ref left, ref right)
+            | ArithExpression::Division(ref left, ref right)
+            | ArithExpression::Modulo(ref left, ref right) => {
+                left.get_var_names_rec(result_clocks);
+                right.get_var_names_rec(result_clocks);
+            }
+            ArithExpression::Clock(_) => (),
+            ArithExpression::VarName(ref name) => result_clocks.push(name.clone()),
+            ArithExpression::Int(_) => (),
         }
     }
 
     /// Replaces all occurrences of `ArithExpression::VarName(old)` with `new`
 
     /// # Arguments
-    /// `old`: The `varname` to be replaced
+    /// `old`: The `var name` to be replaced
 
-    /// `new`: The new varname
-    pub fn replace_varname(&mut self, old: &String, new: &String) {
+    /// `new`: The new var name
+    pub fn replace_var_name(&mut self, old: &String, new: &String) {
         match self {
             ArithExpression::Difference(a1, a2)
             | ArithExpression::Addition(a1, a2)
             | ArithExpression::Multiplication(a1, a2)
             | ArithExpression::Division(a1, a2)
             | ArithExpression::Modulo(a1, a2) => {
-                a1.replace_varname(old, new);
-                a2.replace_varname(old, new);
+                a1.replace_var_name(old, new);
+                a2.replace_var_name(old, new);
             }
             ArithExpression::Clock(_) | ArithExpression::Int(_) => (),
             ArithExpression::VarName(name) => {
@@ -587,5 +652,62 @@ impl Clock {
 
     pub fn invert(&mut self) {
         self.negated = !self.negated;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::data_reader::parse_edge::parse_guard;
+    use crate::JsonProjectLoader;
+    use test_case::test_case;
+    const PATH: &str = "samples/json/PopulateClocks";
+
+    #[test_case("5",        vec![],                                  true  ; "No clocks")]
+    #[test_case("5+x",      vec!["x".to_string()],                   true  ; "A single clock with addition")]
+    #[test_case("y-9",      vec!["y".to_string()],                   true  ; "A single clock with difference")]
+    #[test_case("zz*6/z",   vec!["zz".to_string(), "z".to_string()], true  ; "2 clocks with similar names")]
+    #[test_case("5%alpha",  vec!["alpha".to_string()],               true  ; "Longer clock names")]
+    #[test_case("5%alpha",  vec!["x".to_string()],                   false ; "One clock, should fail")]
+    fn test_get_clocks_arith(expression: &str, expected: Vec<String>, verdict: bool) {
+        // Arrange
+        // We test arith expressions by converting them into boolean expressions and then running the bool test below.
+        let mut expression = expression.to_owned();
+        expression.push_str("<0");
+        // parse_guard is used to parse a boolean expression, as guards are just boolean expressions.
+        match parse_guard(&expression) {
+            Ok(input_expr) => {
+                // Act
+                let results: Vec<String> = input_expr.get_var_names();
+                // Assert
+                assert_eq!((expected == results), verdict);
+            }
+            Err(err) => {
+                panic!("Test failed: {}", err);
+            }
+        };
+    }
+
+    #[test_case("Updates1", vec![0,0] ; "Two updates set to 0")]
+    #[test_case("Updates2", vec![3,4] ; "Two updates set to none-zero")]
+    #[test_case("Updates3", vec![5,7] ; "Updates with arithmetic expressions")]
+    fn test_get_evaluated_int(comp_name: &str, expected: Vec<i32>) {
+        let mut project_loader = JsonProjectLoader::new_loader(PATH, crate::tests::TEST_SETTINGS);
+        project_loader.get_settings_mut().disable_clock_reduction = true;
+        let test_comp = project_loader.get_component(comp_name).unwrap().clone();
+
+        let mut clock_values: Vec<i32> = Vec::new();
+
+        if let Some(edge) = test_comp.edges.iter().find(|edge| edge.id == "E12") {
+            if let Some(updates) = &edge.update {
+                for update in updates {
+                    match update.expression.get_evaluated_int() {
+                        Err(_) => panic!("no value evaluated on update"),
+                        Ok(value) => clock_values.push(value),
+                    };
+                }
+            }
+        }
+
+        assert_eq!(clock_values, expected);
     }
 }

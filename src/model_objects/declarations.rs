@@ -23,7 +23,7 @@ impl Declarations {
     }
 
     pub fn get_clock_count(&self) -> usize {
-        self.clocks.len()
+        self.clocks.values().collect::<HashSet<_>>().len()
     }
 
     pub fn set_clock_indices(&mut self, start_index: ClockIndex) {
@@ -87,5 +87,8 @@ impl Declarations {
                 }
             }
         }
+    }
+    pub fn remove_clock_from_dcls(&mut self, clock: &str) {
+        self.clocks.remove(clock);
     }
 }

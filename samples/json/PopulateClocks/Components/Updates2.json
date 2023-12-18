@@ -1,0 +1,183 @@
+{
+  "name": "Updates2",
+  "declarations": "clock x, y, z;",
+  "locations": [
+    {
+      "id": "L16",
+      "nickname": "",
+      "invariant": "",
+      "type": "INITIAL",
+      "urgency": "NORMAL",
+      "x": 95.00000000000001,
+      "y": 290.0,
+      "color": "8",
+      "nicknameX": 30.0,
+      "nicknameY": -10.0,
+      "invariantX": 30.0,
+      "invariantY": 10.0
+    },
+    {
+      "id": "L17",
+      "nickname": "",
+      "invariant": "",
+      "type": "NORMAL",
+      "urgency": "NORMAL",
+      "x": 270.00001,
+      "y": 289.4,
+      "color": "8",
+      "nicknameX": 30.0,
+      "nicknameY": -10.0,
+      "invariantX": 30.0,
+      "invariantY": 10.0
+    },
+    {
+      "id": "L18",
+      "nickname": "",
+      "invariant": "",
+      "type": "NORMAL",
+      "urgency": "NORMAL",
+      "x": 200.00001,
+      "y": 379.4,
+      "color": "8",
+      "nicknameX": 30.0,
+      "nicknameY": -10.0,
+      "invariantX": 30.0,
+      "invariantY": 10.0
+    },
+    {
+      "id": "L19",
+      "nickname": "",
+      "invariant": "",
+      "type": "NORMAL",
+      "urgency": "NORMAL",
+      "x": 410.00001,
+      "y": 295.20000000000005,
+      "color": "8",
+      "nicknameX": 30.0,
+      "nicknameY": -10.0,
+      "invariantX": 30.0,
+      "invariantY": 10.0
+    }
+  ],
+  "edges": [
+    {
+      "id": "E9",
+      "group": "",
+      "sourceLocation": "L16",
+      "targetLocation": "L17",
+      "status": "INPUT",
+      "select": "",
+      "guard": "x\u003e10",
+      "update": "",
+      "sync": "",
+      "isLocked": false,
+      "nails": [
+        {
+          "x": 139.99999999999994,
+          "y": 270.0,
+          "propertyType": "GUARD",
+          "propertyX": 10.000000000000057,
+          "propertyY": -40.0
+        },
+        {
+          "x": 182.06666666666666,
+          "y": 286.8,
+          "propertyType": "SYNCHRONIZATION",
+          "propertyX": 10.0,
+          "propertyY": 0.0
+        }
+      ]
+    },
+    {
+      "id": "E10",
+      "group": "",
+      "sourceLocation": "L17",
+      "targetLocation": "L19",
+      "status": "INPUT",
+      "select": "",
+      "guard": "x\u003c5",
+      "update": "",
+      "sync": "",
+      "isLocked": false,
+      "nails": [
+        {
+          "x": 289.99999999999994,
+          "y": 240.0,
+          "propertyType": "GUARD",
+          "propertyX": 10.0,
+          "propertyY": 0.0
+        },
+        {
+          "x": 349.1666666666667,
+          "y": 264.43333333333334,
+          "propertyType": "SYNCHRONIZATION",
+          "propertyX": 10.0,
+          "propertyY": 0.0
+        }
+      ]
+    },
+    {
+      "id": "E11",
+      "group": "",
+      "sourceLocation": "L16",
+      "targetLocation": "L18",
+      "status": "INPUT",
+      "select": "",
+      "guard": "y\u003e5",
+      "update": "",
+      "sync": "",
+      "isLocked": false,
+      "nails": [
+        {
+          "x": 119.99999999999994,
+          "y": 350.0,
+          "propertyType": "GUARD",
+          "propertyX": 10.0,
+          "propertyY": 0.0
+        },
+        {
+          "x": 160.76666666666668,
+          "y": 333.90000000000003,
+          "propertyType": "SYNCHRONIZATION",
+          "propertyX": 10.0,
+          "propertyY": 0.0
+        }
+      ]
+    },
+    {
+      "id": "E12",
+      "group": "",
+      "sourceLocation": "L18",
+      "targetLocation": "L17",
+      "status": "INPUT",
+      "select": "",
+      "guard": "",
+      "update": "y \u003d 3, z \u003d 4",
+      "sync": "",
+      "isLocked": false,
+      "nails": [
+        {
+          "x": 249.99999999999994,
+          "y": 370.0,
+          "propertyType": "GUARD",
+          "propertyX": 30.00000000000003,
+          "propertyY": 0.0
+        },
+        {
+          "x": 259.7,
+          "y": 346.26666666666665,
+          "propertyType": "SYNCHRONIZATION",
+          "propertyX": 10.0,
+          "propertyY": 0.0
+        }
+      ]
+    }
+  ],
+  "description": "",
+  "x": 65.0,
+  "y": 14.5,
+  "width": 450.0,
+  "height": 600.0,
+  "color": "8",
+  "includeInPeriodicCheck": true
+}

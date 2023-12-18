@@ -286,6 +286,26 @@ impl JsonProjectLoader {
             input_enabler::make_input_enabled(&mut component, inputs);
         }
 
+        // Will reduce clocks on the component if not disabled
+        if !self.get_settings().disable_clock_reduction {
+            // Set up and populate clock usages
+            component.initialise_clock_usages();
+            component.populate_usages_with_guards();
+            component.populate_usages_with_updates();
+            component.populate_usages_with_invariants();
+
+            // Remove the redundant clocks from component using the clock_usages
+            // TODO: Maybe log removed clocks
+            match component.remove_redundant_clocks() {
+                Ok(()) => {}
+                Err(err) => {
+                    eprintln!("Error removing redundant clocks: {}", err);
+                }
+            }
+            // Compress the declarations after removing
+            component.compress_dcls();
+        }
+
         self.loaded_components
             .insert(String::from(component_name), component);
 
