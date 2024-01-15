@@ -1,7 +1,6 @@
 [package]
 name = "reveaal"
 version = "0.1.0"
-build = "src/build.rs"
 authors = ["Thomas Lohse", "Sebastian Lund", "Thorulf Neustrup", "Peter Greve"]
 edition = "2018"
 
@@ -27,8 +26,8 @@ xml-rs = "0.8.3"
 serde-xml-rs = "0.6.0"
 elementtree = "1.2.2"
 dyn-clone = "1.0"
-tonic = "0.8.3"
-prost = "0.11.0"
+tonic = "0.10.2"
+prost = "0.12.1"
 tokio = { version = "1.0", features = ["macros", "rt"] }
 colored = "2.0.0"
 simple-error = "0.2.3"
@@ -46,13 +45,11 @@ itertools = "0.10.5"
 regex = "1"
 rayon = "1.6.1"
 lazy_static = "1.4.0"
+ecdar-protobuf = { git = "https://github.com/ECDAR-AAU-SW-P5/Ecdar-ProtoBuf-rs", version = "0.1.0", features = ["server"] }
 
 # Enable optimizations for EDBM in debug mode, but not for our code:
 [profile.dev.package.edbm]
 opt-level = 3
-
-[build-dependencies]
-tonic-build = "0.8.2"
 
 [dev-dependencies]
 test-case = "2.2.2"

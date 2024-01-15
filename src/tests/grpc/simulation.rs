@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::protobuf_server::services::SimulationStartRequest;
+    use crate::tests::simulation::helper::NewSimulationHelper;
     use crate::{
         protobuf_server::{self, services::ecdar_backend_server::EcdarBackend},
         tests::simulation::helper::construct_step_requests,

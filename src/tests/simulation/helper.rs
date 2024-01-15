@@ -9,8 +9,12 @@ use crate::protobuf_server::services::{
     SimulationStepResponse,
 };
 
-impl SimulationStartRequest {
-    pub fn new(component_names: &[&str], components_path: &str, composition: &str) -> Self {
+pub trait NewSimulationHelper {
+    fn new(component_names: &[&str], components_path: &str, composition: &str) -> Self;
+}
+
+impl NewSimulationHelper for SimulationStartRequest {
+    fn new(component_names: &[&str], components_path: &str, composition: &str) -> Self {
         let simulation_info =
             ProtoSimulationInfo::new(component_names, components_path, composition);
         SimulationStartRequest {
@@ -36,7 +40,7 @@ pub fn construct_step_requests(
         })
 }
 
-impl ProtoSimulationInfo {
+impl NewSimulationHelper for ProtoSimulationInfo {
     fn new(component_names: &[&str], components_path: &str, composition: &str) -> Self {
         let json_components: Vec<_> = component_names
             .iter()
